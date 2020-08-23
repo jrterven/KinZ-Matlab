@@ -74,6 +74,7 @@ public:
     void getColor(uint8_t rgbImage[], int& time, bool& validColor);
     void getColorAligned(uint8_t color[], int& time, bool& valid);
     void getInfrared(uint16_t infrared[], int& time, bool& validInfrared);
+    void getCalibration(k4a_calibration_t &calibration);
 //    void getPointCloud(double pointCloud[], unsigned char colors[], bool color, bool& validData);    
 //    void getDepthIntrinsics(CameraIntrinsics &intrinsics);
     

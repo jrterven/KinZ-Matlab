@@ -4,12 +4,6 @@
 % Juan R. Terven, jrterven@hotmail.com
 % Diana M. Cordova, diana_mce@hotmail.com
 % 
-% Citation:
-% Terven J. Cordova D.M., "KinZ. A Kinect for Azure Toolbox for MATLAB", Science of
-% Computer Programming.
-% https://github.com/jrterven/KinZ, 2020.
-% 
-
 addpath('Mex');
 clear all
 close all

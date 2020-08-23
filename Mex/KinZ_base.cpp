@@ -461,3 +461,7 @@ bool KinZ::align_color_to_depth(int width, int height, k4a_image_t &transformed_
 
     return true;
 }
+
+void KinZ::getCalibration(k4a_calibration_t &calibration) {
+    calibration = m_calibration;
+}

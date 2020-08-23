@@ -262,45 +262,75 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // getDepthCalibration method
     if (!strcmp("getCalibration", cmd)) 
     { 
+        uint16_t calib_flag = (int)mxGetScalar(prhs[2]);
+        
         //Assign field names
         const char *field_names[] = {"fx", "fy", "cx","cy",
                                      "k1", "k2", "k3", "k4", 
-                                     "k5", "k6", "p1", "p2"};  
+                                     "k5", "k6", "p1", "p2",
+                                     "R", "t"};  
                                 
-        CameraIntrinsics intrinsics = {};
+        k4a_calibration_t calibration;
         
         // call the class method
-        Kin2_instance->getCalibration(intrinsics);
+        KinZ_instance->getCalibration(calibration);
+        
+        k4a_calibration_camera_t  calib;
+        if(calib_flag == 2)
+            calib = calibration.color_camera_calibration;
+        else
+            calib = calibration.depth_camera_calibration;
         
         //Allocate memory for the structure
         mwSize dims[2] = {1, 1};
-        plhs[0] = mxCreateStructArray(2,dims,7,field_names);
+        plhs[0] = mxCreateStructArray(2,dims,14,field_names);
         
         // Copy the intrinsic parameters to the the output variables
         
-        // I AM HERE
         // output data
-        mxArray *fx, *fy, *ppx, *ppy, *rd2, *rd4, *rd6;
+        mxArray *fx, *fy, *cx, *cy, *k1, *k2, *k3, *k4, *k5, *k6, *p1, *p2;
+        mxArray *R, *t;
 
         //Create mxArray data structures to hold the data
         //to be assigned for the structure.
-        fx  = mxCreateDoubleScalar(intrinsics.FocalLengthX);
-        fy  = mxCreateDoubleScalar(intrinsics.FocalLengthY);
-        ppx  = mxCreateDoubleScalar(intrinsics.PrincipalPointX);
-        ppy  = mxCreateDoubleScalar(intrinsics.PrincipalPointY);
-        rd2  = mxCreateDoubleScalar(intrinsics.PrincipalPointY);
-        rd4  = mxCreateDoubleScalar(intrinsics.RadialDistortionFourthOrder);
-        rd6  = mxCreateDoubleScalar(intrinsics.RadialDistortionSixthOrder);
-
+        fx  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.fx);
+        fy  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.fy);
+        cx  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.cx);
+        cy  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.cy);
+        k1  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k1);
+        k2  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k2);
+        k3  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k3);
+        k4  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k4);
+        k5  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k5);
+        k6  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k6);
+        p1  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.p1);
+        p2  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.p2);
+        R = mxCreateDoubleMatrix(3, 3, mxREAL);
+        t = mxCreateDoubleMatrix(3, 1, mxREAL);
+        
+        double *rot_vals = mxGetPr(R);
+        for(int i=0; i<9; i++)
+            rot_vals[i] = calib.extrinsics.rotation[i];
+        
+        double *t_vals = mxGetPr(t);
+        for(int i=0; i<3; i++)
+            t_vals[i] = calib.extrinsics.translation[i];
+        
         //Assign the output matrices to the struct
         mxSetFieldByNumber(plhs[0],0,0, fx);
         mxSetFieldByNumber(plhs[0],0,1, fy);
-        mxSetFieldByNumber(plhs[0],0,2, ppx);
-        mxSetFieldByNumber(plhs[0],0,3, ppy);
-        mxSetFieldByNumber(plhs[0],0,4, rd2);
-        mxSetFieldByNumber(plhs[0],0,5, rd4);
-        mxSetFieldByNumber(plhs[0],0,6, rd6);
-                
+        mxSetFieldByNumber(plhs[0],0,2, cx);
+        mxSetFieldByNumber(plhs[0],0,3, cy);
+        mxSetFieldByNumber(plhs[0],0,4, k1);
+        mxSetFieldByNumber(plhs[0],0,5, k2);
+        mxSetFieldByNumber(plhs[0],0,6, k3);
+        mxSetFieldByNumber(plhs[0],0,7, k4);
+        mxSetFieldByNumber(plhs[0],0,8, k5);
+        mxSetFieldByNumber(plhs[0],0,9, k6);
+        mxSetFieldByNumber(plhs[0],0,10, p1);
+        mxSetFieldByNumber(plhs[0],0,11, p2);
+        mxSetFieldByNumber(plhs[0],0,12, R);
+        mxSetFieldByNumber(plhs[0],0,13, t);
         return;
     }
     

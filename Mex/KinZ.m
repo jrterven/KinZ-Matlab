@@ -227,26 +227,21 @@ classdef KinZ < handle
             [varargout{1:nargout}] = KinZ_mex('getInfrared', this.objectHandle, this.DepthHeight, this.DepthWidth);
         end
         
-        function calibParams = getColorCalibration(this, varargin)
-            % getColorCalibration - return the color camera calibration.
+        function varargout = getCalibration(this, varargin)
+            % getDepthCalibration - return the depth camera calibration.
             % The calibration data are returned inside a structure containing:
-            % FocalLengthX, FocalLengthY, PrincipalPointX, PrincipalPointY,
+            % fx, fy, cx, cy, k1, k2, k3, k4, k5, k6, p1, p2
             % Rotation (wrt depth camera), Translation(wrt depth camera), 
-            % RadialDistortionSecondOrder, RadialDistortionFourthOrder, 
-            % RadialDistortionSixthOrder
             %
             % Get the calibration from the Kinect
+            get_depth_calib = ismember('depth',varargin);
+            get_color_calib = ismember('color',varargin);
+            calib_flags = uint16(0);
             
-            % build the output structure
-            this.calibParams = struct('FocalLengthX',this.colorFL, ...
-                'FocalLengthY',this.colorFL,'PrincipalPointX',this.colorPPX, ...
-                'PrincipalPointY',this.colorPPY, 'Rotation', this.colorRot, ...
-                'Translation', this.colorTranslation, ...
-                'RadialDistortionSecondOrder',this.colork1, ...
-                'RadialDistortionFourthOrder', this.colork2, ...
-                'RadialDistortionSixthOrder', this.colork3);
-
-             calibParams = this.calibParams;
+            if get_depth_calib, calib_flags = 1; end
+            if get_color_calib, calib_flags = 2; end
+            
+            [varargout{1:nargout}] = KinZ_mex('getCalibration', this.objectHandle, calib_flags);
         end
         
     end % protected methods
