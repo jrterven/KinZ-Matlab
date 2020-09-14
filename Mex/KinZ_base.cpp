@@ -63,6 +63,8 @@ KinZ::~KinZ()
 //////////////////////////////////////////////////////////////////////////
 void KinZ::init()
 {
+    mexPrintf("Flags inside init: %d", m_flags);
+
     uint32_t m_device_count = k4a_device_get_installed_count();
     if (m_device_count == 0) {
         mexPrintf("No K4A m_devices found\n");
@@ -137,7 +139,6 @@ void KinZ::init()
         mexPrintf("K4A_DEPTH_MODE_NFOV_UNBINNED\n");
     }
 
-
     // Get calibration
     if (K4A_RESULT_SUCCEEDED !=
         k4a_device_get_calibration(m_device, m_config.depth_mode, m_config.color_resolution, &m_calibration)) {
@@ -162,6 +163,22 @@ void KinZ::init()
     }
     else
         mexPrintf("Kinect for Azure started successfully!!\n");
+
+    // Activate IMU sensors
+    m_imu_sensors_available = false;
+    if (m_flags & kz::IMU_ON) {
+        if(k4a_device_start_imu(m_device) == K4A_RESULT_SUCCEEDED) {
+            printf("IMU sensors started succesfully.");
+            m_imu_sensors_available = true;
+        }
+        else {
+            printf("IMU SENSORES FAILED INITIALIZATION");
+            m_imu_sensors_available = false;
+        }
+    }
+    else {
+        mexPrintf("NOT IMU ON!");
+    }
 } // end init
 
 ///////// Function: updateData ///////////////////////////////////////////
@@ -244,8 +261,45 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
             }
         }
     }
+
+    if((capture_flags & kz::IMU_ON) && m_imu_sensors_available) {
+        //mexPrintf("Updating sensor data");
+        k4a_imu_sample_t imu_sample;
+
+        // Capture a imu sample
+        k4a_wait_result_t imu_status;
+        imu_status = k4a_device_get_imu_sample(m_device, &imu_sample, TIMEOUT_IN_MS);
+        switch (imu_status)
+        {
+        case K4A_WAIT_RESULT_SUCCEEDED:
+            break;
+        case K4A_WAIT_RESULT_TIMEOUT:
+            printf("Timed out waiting for a imu sample\n");
+            break;
+        case K4A_WAIT_RESULT_FAILED:
+            printf("Failed to read a imu sample\n");
+            break;
+        }
+
+        // Access the accelerometer readings
+        if (imu_status == K4A_WAIT_RESULT_SUCCEEDED)
+        {
+            m_imu_data.temperature = imu_sample.temperature;
+            m_imu_data.acc_x = imu_sample.acc_sample.xyz.x;
+            m_imu_data.acc_y = imu_sample.acc_sample.xyz.y;
+            m_imu_data.acc_z = imu_sample.acc_sample.xyz.z;
+            m_imu_data.acc_timestamp_usec = imu_sample.acc_timestamp_usec;
+            m_imu_data.gyro_x = imu_sample.gyro_sample.xyz.x;
+            m_imu_data.gyro_y = imu_sample.gyro_sample.xyz.y;
+            m_imu_data.gyro_z = imu_sample.gyro_sample.xyz.z;
+            m_imu_data.gyro_timestamp_usec = imu_sample.gyro_timestamp_usec;
+        }
+    }
+    /*else {
+        mexPrintf("NOT Updating sensor data");
+        mexPrintf("%d", capture_flags);
+    }*/
     
-  
     if (newDepthData && newColorData && newInfraredData)
         valid[0] = 1;
     else
@@ -256,7 +310,7 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
 // Copy color frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getColor(uint8_t rgbImage[], int& time, bool& validColor)
+void KinZ::getColor(uint8_t rgbImage[], uint64_t& time, bool& validColor)
 {
     if(m_image_c) {
         int w = k4a_image_get_width_pixels(m_image_c);
@@ -277,7 +331,7 @@ void KinZ::getColor(uint8_t rgbImage[], int& time, bool& validColor)
                 rgbImage[numColorPix*2 + k] = dataBuffer[idx];                   
             }
         validColor = true;
-        time = 0;
+        time = k4a_image_get_system_timestamp_nsec(m_image_c);
     }
     else
         validColor = false;
@@ -288,7 +342,7 @@ void KinZ::getColor(uint8_t rgbImage[], int& time, bool& validColor)
 // Copy depth frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getDepth(uint16_t depth[], int& time, bool& validDepth)
+void KinZ::getDepth(uint16_t depth[], uint64_t& time, bool& validDepth)
 {
     if(m_image_d) {
         int w = k4a_image_get_width_pixels(m_image_d);
@@ -309,7 +363,7 @@ void KinZ::getDepth(uint16_t depth[], int& time, bool& validDepth)
             }
 
         validDepth = true;
-        time = 0;
+        time = k4a_image_get_system_timestamp_nsec(m_image_d);
     }
     else 
         validDepth = false;
@@ -319,7 +373,7 @@ void KinZ::getDepth(uint16_t depth[], int& time, bool& validDepth)
 // Copy depth aligned to color frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getDepthAligned(uint16_t depth[], int& time, bool& validDepth)
+void KinZ::getDepthAligned(uint16_t depth[], uint64_t& time, bool& validDepth)
 {
     if(m_image_d) {
         k4a_image_t image_dc;
@@ -348,7 +402,7 @@ void KinZ::getDepthAligned(uint16_t depth[], int& time, bool& validDepth)
             }
 
         validDepth = true;
-        time = 0;
+        time = time = k4a_image_get_system_timestamp_nsec(m_image_c);
     }
     else 
         validDepth = false;
@@ -359,7 +413,7 @@ void KinZ::getDepthAligned(uint16_t depth[], int& time, bool& validDepth)
 // Copy color aligned to depth frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getColorAligned(uint8_t color[], int& time, bool& valid)
+void KinZ::getColorAligned(uint8_t color[], uint64_t& time, bool& valid)
 {
     if(m_image_d && m_image_c) {
         k4a_image_t image_cd;
@@ -387,7 +441,7 @@ void KinZ::getColorAligned(uint8_t color[], int& time, bool& valid)
             }
 
         valid = true;
-        time = 0;
+        time = k4a_image_get_system_timestamp_nsec(m_image_d);
     }
     else 
         valid = false;
@@ -397,7 +451,7 @@ void KinZ::getColorAligned(uint8_t color[], int& time, bool& valid)
 // Copy infrared frame to Matlab matrix
 // You must call updateData first
 ///////////////////////////////////////////////////////////////////////////
-void KinZ::getInfrared(uint16_t infrared[], int& time, bool& validInfrared)
+void KinZ::getInfrared(uint16_t infrared[], uint64_t& time, bool& validInfrared)
 {
     if(m_image_ir) {
         int w = k4a_image_get_width_pixels(m_image_ir);
@@ -418,7 +472,7 @@ void KinZ::getInfrared(uint16_t infrared[], int& time, bool& validInfrared)
             }
         
         validInfrared = true;
-        time = 0;
+        time = k4a_image_get_system_timestamp_nsec(m_image_ir);
     }
     else
         validInfrared = false;
@@ -465,3 +519,101 @@ bool KinZ::align_color_to_depth(int width, int height, k4a_image_t &transformed_
 void KinZ::getCalibration(k4a_calibration_t &calibration) {
     calibration = m_calibration;
 }
+
+/** Transforms the depth image into 3 planar images representing X, Y and Z-coordinates of corresponding 3d points.
+* Throws error on failure.
+*
+* \sa k4a_transformation_depth_image_to_point_cloud
+*/
+bool KinZ::depth_image_to_point_cloud(int width, int height, k4a_image_t &xyz_image) {
+    if (K4A_RESULT_SUCCEEDED != k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
+                                                 width, height,
+                                                 width * 3 * (int)sizeof(int16_t),
+                                                 &xyz_image)) {
+        printf("Failed to create transformed xyz image\n");
+        return false;
+    }
+
+    k4a_result_t result =
+        k4a_transformation_depth_image_to_point_cloud(m_transformation,
+                                                      m_image_d,
+                                                      K4A_CALIBRATION_TYPE_DEPTH,
+                                                      xyz_image);
+
+    if (K4A_RESULT_SUCCEEDED != result) {
+        printf("Failed to transform depth image to point cloud!");
+        return false;
+    }
+    return true;
+}
+
+///////// Function: getPointCloud ///////////////////////////////////////////
+// Get camera points from depth frame and copy them to Matlab matrix
+// You must call updateData first and have depth activated
+///////////////////////////////////////////////////////////////////////////
+void KinZ::getPointCloud(double pointCloud[], unsigned char colors[], 
+                         bool color, bool& validData)
+{   
+    validData = false; 
+    if(m_image_d) {
+        k4a_image_t point_cloud_image = NULL;
+        k4a_image_t color_image = NULL;
+        bool valid_color_transform = false;
+
+        // Get the point cloud
+        if(depth_image_to_point_cloud(k4a_image_get_width_pixels(m_image_d),
+            k4a_image_get_height_pixels(m_image_d), point_cloud_image)) {
+
+            // if the user want color
+            if(color) {
+                // get the color image same size as depth image
+                int depth_image_width_pixels = k4a_image_get_width_pixels(m_image_d);
+                int depth_image_height_pixels = k4a_image_get_height_pixels(m_image_d);
+                valid_color_transform = align_color_to_depth(depth_image_width_pixels, 
+                                                             depth_image_height_pixels,
+                                                             color_image);
+            }
+
+            int width = k4a_image_get_width_pixels(point_cloud_image);
+            int height = k4a_image_get_height_pixels(point_cloud_image);
+            int numDepthPoints = width * height;
+
+            int16_t *point_cloud_image_data = (int16_t *)(void *)k4a_image_get_buffer(point_cloud_image);
+            uint8_t *color_image_data = k4a_image_get_buffer(color_image);
+
+            for (int i = 0; i < numDepthPoints; i++) {
+                int16_t X, Y, Z;  
+                X = point_cloud_image_data[3 * i + 0];
+                Y = point_cloud_image_data[3 * i + 1];
+                Z = point_cloud_image_data[3 * i + 2];
+
+                pointCloud[i] = X;
+                pointCloud[i + numDepthPoints] = Y;
+                pointCloud[i + numDepthPoints + numDepthPoints] = Z;
+
+                if(color && valid_color_transform) {
+                    uint8_t R, G, B;
+                    B = color_image_data[4 * i + 0];
+                    G = color_image_data[4 * i + 1];
+                    R = color_image_data[4 * i + 2];
+
+                    colors[i] = R;
+                    colors[i + numDepthPoints] = G;
+                    colors[i + numDepthPoints + numDepthPoints] = B;
+                }
+            }
+            validData = true;
+        } 
+        else {
+            pointCloud[0] = 0;
+            pointCloud[1] = 0;
+            pointCloud[2] = 0;
+            mexPrintf("Error getting Pointcloud\n");
+        }
+    }
+}
+
+void KinZ::getSensorData(Imu_sample &imu_data) {
+    imu_data = m_imu_data;
+}
+

@@ -42,10 +42,19 @@ namespace kz
         C2160 = 128,
         C3072 = 256,
         D_BINNED = 512,
-        D_WFOV = 1024
+        D_WFOV = 1024,
+        IMU_ON = 2048
     };
     typedef unsigned short int Flags;
 }
+
+struct Imu_sample {
+    float temperature;
+    float acc_x, acc_y, acc_z;
+    uint64_t acc_timestamp_usec;
+    float gyro_x, gyro_y, gyro_z;
+    uint64_t gyro_timestamp_usec;
+};
 
 /*************************************************************************/
 /************************** KinZ Class ***********************************/
@@ -69,14 +78,14 @@ public:
     
     /************ Data Sources *************/
     void updateData(uint16_t capture_flags, uint8_t valid[]);
-    void getDepth(uint16_t depth[], int& time, bool& validDepth);
-    void getDepthAligned(uint16_t depth[], int& time, bool& validDepth);
-    void getColor(uint8_t rgbImage[], int& time, bool& validColor);
-    void getColorAligned(uint8_t color[], int& time, bool& valid);
-    void getInfrared(uint16_t infrared[], int& time, bool& validInfrared);
+    void getDepth(uint16_t depth[], uint64_t& time, bool& validDepth);
+    void getDepthAligned(uint16_t depth[], uint64_t& time, bool& validDepth);
+    void getColor(uint8_t rgbImage[], uint64_t& time, bool& validColor);
+    void getColorAligned(uint8_t color[], uint64_t& time, bool& valid);
+    void getInfrared(uint16_t infrared[], uint64_t& time, bool& validInfrared);
     void getCalibration(k4a_calibration_t &calibration);
-//    void getPointCloud(double pointCloud[], unsigned char colors[], bool color, bool& validData);    
-//    void getDepthIntrinsics(CameraIntrinsics &intrinsics);
+    void getPointCloud(double pointCloud[], unsigned char colors[], bool color, bool& validData);   
+    void getSensorData(Imu_sample &imu_data); 
     
     /************ Mappings **************/
 //    void mapDepthPoints2Color(double depthCoords[], int size, UINT16 colorCoords[]);
@@ -107,7 +116,11 @@ private:
     k4a_image_t m_image_ir = nullptr;
 
     // Initialization flags
-    kz::Flags       m_flags;
+    kz::Flags m_flags;
+
+    // IMU sensors
+    Imu_sample m_imu_data;
+    bool m_imu_sensors_available;
 
     // calibration and transformation object
     k4a_calibration_t m_calibration;
@@ -116,6 +129,7 @@ private:
 	int initialize(int resolution, bool wide_fov, bool binned, uint8_t framerate, uint8_t deviceIndex);
     bool align_depth_to_color(int width, int height, k4a_image_t &transformed_depth_image);
     bool align_color_to_depth(int width, int height, k4a_image_t &transformed_color_image);
+    bool depth_image_to_point_cloud(int width, int height, k4a_image_t &xyz_image);
 
     
 //    Calibration getDepthCalibration();
@@ -128,3 +142,4 @@ private:
 //    std::vector<std::vector<int> > map_coords_depth_2d_to_color_2d(std::vector<std::vector<int> > &depth_coords);
 //    std::vector<std::vector<int> > map_coords_color_2d_to_3D(std::vector<std::vector<int> > &color_coords, bool depth_reference);
 }; // KinZ class definition
+

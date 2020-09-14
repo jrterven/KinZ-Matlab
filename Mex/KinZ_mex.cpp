@@ -95,12 +95,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         plhs[0] = mxCreateNumericArray(2, depthDim, mxUINT16_CLASS, mxREAL);
         depth = (uint16_t*)mxGetPr(plhs[0]);
         
-        plhs[1] = mxCreateNumericArray(2,timeDim, mxINT64_CLASS, mxREAL);
-        int *timeStamp = (int*)mxGetPr(plhs[1]);
+        plhs[1] = mxCreateNumericArray(2,timeDim, mxUINT64_CLASS, mxREAL);
+        uint64_t *timeStamp = (uint64_t*)mxGetPr(plhs[1]);
         
         // Call the class function
         bool validDepth;
-        KinZ_instance->getDepth(depth, *timeStamp,validDepth);
+        KinZ_instance->getDepth(depth, *timeStamp, validDepth);
         
         if(!validDepth)
         {
@@ -131,12 +131,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         plhs[0] = mxCreateNumericArray(2, depthDim, mxUINT16_CLASS, mxREAL);
         depth = (uint16_t*)mxGetPr(plhs[0]);
         
-        plhs[1] = mxCreateNumericArray(2,timeDim, mxINT64_CLASS, mxREAL);
-        int *timeStamp = (int*)mxGetPr(plhs[1]);
+        plhs[1] = mxCreateNumericArray(2,timeDim, mxUINT64_CLASS, mxREAL);
+        uint64_t *timeStamp = (uint64_t*)mxGetPr(plhs[1]);
         
         // Call the class function
         bool validDepth;
-        KinZ_instance->getDepthAligned(depth, *timeStamp,validDepth);
+        KinZ_instance->getDepthAligned(depth, *timeStamp, validDepth);
         
         if(!validDepth)
         {
@@ -166,15 +166,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         // Reserve space for outputs
         plhs[0] = mxCreateNumericArray(3, colorDim, mxUINT8_CLASS, mxREAL);
         
-        plhs[1] = mxCreateNumericArray(2,timeDim, mxINT64_CLASS, mxREAL);
-        int *timeStamp = (int*)mxGetPr(plhs[1]);
+        plhs[1] = mxCreateNumericArray(2, timeDim, mxUINT64_CLASS, mxREAL);
+        uint64_t *timeStamp = (uint64_t*)mxGetPr(plhs[1]);
         
         // Assign pointers to the output parameters
         rgbImage = (uint8_t*)mxGetPr(plhs[0]);
       
         // Call the class function
         bool validColor;
-        KinZ_instance->getColor(rgbImage,*timeStamp,validColor);
+        KinZ_instance->getColor(rgbImage, *timeStamp, validColor);
         
         if(!validColor)
         {
@@ -205,8 +205,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         plhs[0] = mxCreateNumericArray(3, colorDim, mxUINT8_CLASS, mxREAL);
         color = (uint8_t*)mxGetPr(plhs[0]);
         
-        plhs[1] = mxCreateNumericArray(2,timeDim, mxINT64_CLASS, mxREAL);
-        int *timeStamp = (int*)mxGetPr(plhs[1]);
+        plhs[1] = mxCreateNumericArray(2,timeDim, mxUINT64_CLASS, mxREAL);
+        uint64_t *timeStamp = (uint64_t*)mxGetPr(plhs[1]);
         
         // Call the class function
         bool validColor;
@@ -240,8 +240,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         // Reserve space for outputs
         plhs[0] = mxCreateNumericArray(2, infraredDim, mxUINT16_CLASS, mxREAL); 
         
-        plhs[1] = mxCreateNumericArray(2,timeDim, mxINT64_CLASS, mxREAL);
-        int *timeStamp = (int*)mxGetPr(plhs[1]);
+        plhs[1] = mxCreateNumericArray(2,timeDim, mxUINT64_CLASS, mxREAL);
+        uint64_t *timeStamp = (uint64_t*)mxGetPr(plhs[1]);
         
         // Assign pointers to the output parameters
         infrared = (uint16_t*)mxGetPr(plhs[0]);
@@ -333,6 +333,99 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mxSetFieldByNumber(plhs[0],0,13, t);
         return;
     }
+    // getDepthCalibration method
+    if (!strcmp("getSensorData", cmd)) 
+    { 
+        //Assign field names
+        const char *field_names[] = {"temp", "acc_x", "acc_y", "acc_z",
+                                     "acc_timestamp_usec",
+                                     "gyro_x", "gyro_y", "gyro_z",
+                                     "gyro_timestamp_usec"};  
+                                
+        Imu_sample imu_data;
+        
+        // call the class method
+        KinZ_instance->getSensorData(imu_data);
+        
+        //Allocate memory for the structure
+        mwSize dims[2] = {1, 1};
+        plhs[0] = mxCreateStructArray(2,dims,9,field_names);
+        
+        // output data
+        mxArray *temp, *acc_x, *acc_y, *acc_z, *acc_timestamp;
+        mxArray *gyro_x, *gyro_y, *gyro_z, *gyro_timestamp;
+
+        //Create mxArray data structures to hold the data
+        //to be assigned for the structure.
+        temp  = mxCreateDoubleScalar(imu_data.temperature);
+        acc_x  = mxCreateDoubleScalar(imu_data.acc_x);
+        acc_y  = mxCreateDoubleScalar(imu_data.acc_y);
+        acc_z  = mxCreateDoubleScalar(imu_data.acc_z);
+        acc_timestamp  = mxCreateDoubleScalar((double)imu_data.acc_timestamp_usec);
+        gyro_x  = mxCreateDoubleScalar(imu_data.gyro_x);
+        gyro_y  = mxCreateDoubleScalar(imu_data.gyro_y);
+        gyro_z  = mxCreateDoubleScalar(imu_data.gyro_z);
+        gyro_timestamp  = mxCreateDoubleScalar((double)imu_data.gyro_timestamp_usec);
+        
+        //Assign the output matrices to the struct
+        mxSetFieldByNumber(plhs[0],0,0, temp);
+        mxSetFieldByNumber(plhs[0],0,1, acc_x);
+        mxSetFieldByNumber(plhs[0],0,2, acc_y);
+        mxSetFieldByNumber(plhs[0],0,3, acc_z);
+        mxSetFieldByNumber(plhs[0],0,4, acc_timestamp);
+        mxSetFieldByNumber(plhs[0],0,5, gyro_x);
+        mxSetFieldByNumber(plhs[0],0,6, gyro_y);
+        mxSetFieldByNumber(plhs[0],0,7, gyro_z);
+        mxSetFieldByNumber(plhs[0],0,8, gyro_timestamp);
+        return;
+    }
+    // getPointCloud method
+    if (!strcmp("getPointCloud", cmd)) 
+    {        
+        int height, width;
+        height = (int)mxGetScalar(prhs[2]); 
+        width = (int)mxGetScalar(prhs[3]);
+         
+        // Get input parameter:
+        // 0 = no color
+        // 1 = with color
+        int *withColor;
+        bool bwithColor = false;
+        withColor = (int*)mxGetData(prhs[4]);
+        if(*withColor == 0)
+            bwithColor = false;
+        else
+            bwithColor = true;
+                
+        // Prepare output arrays
+        double *pointCloud;   // pointer to output data
+        unsigned char *colors;
+        int size = width * height;
+        int outDim[2]={size,3};    // three values (row vector)
+        
+         // Reserve space for output array
+        plhs[0] = mxCreateNumericArray(2, outDim, mxDOUBLE_CLASS, mxREAL); 
+        plhs[1] = mxCreateNumericArray(2, outDim, mxUINT8_CLASS, mxREAL);
+        
+        // Assign pointers to the output parameters
+        pointCloud = (double*)mxGetPr(plhs[0]);   
+        colors = (unsigned char*)mxGetPr(plhs[1]);
+                
+        // Check parameters
+        if (nlhs < 0 || nrhs < 2)
+            mexErrMsgTxt("getPointCloud: Unexpected arguments.");
+      
+        // Call the class function
+        bool validData;
+        KinZ_instance->getPointCloud(pointCloud, colors, bwithColor, validData);
+        
+        if(!validData)
+        {
+            plhs[0] = mxCreateNumericArray(2, outDim, mxDOUBLE_CLASS, mxREAL); 
+            plhs[1] = mxCreateNumericArray(2, outDim, mxUINT8_CLASS, mxREAL);
+        }
+        return;
+    }    
     
     // Got here, so command not recognized
     mexErrMsgTxt("Command not recognized.");

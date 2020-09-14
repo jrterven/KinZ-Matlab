@@ -37,6 +37,7 @@ classdef KinZ < handle
         flag_depth = false;
         flag_color = false;
         flag_infrared = false;
+        flag_imu = false;
         flag_res_720 = false;
         flag_res_1080 = false;
         flag_res_1440 = false;
@@ -45,6 +46,7 @@ classdef KinZ < handle
         flag_res_3072 = false;
         flag_depth_binned = false;
         flag_depth_wfov = false;
+        flag_imu_on = false;
     end
     
     properties
@@ -75,6 +77,7 @@ classdef KinZ < handle
             this.flag_res_3072 = ismember('3072p',varargin);
             this.flag_depth_binned = ismember('binned',varargin);
             this.flag_depth_wfov = ismember('wfov',varargin);
+            this.flag_imu_on = ismember('imu_on', varargin);
             flags = uint16(0);
             
             if this.flag_res_720
@@ -109,6 +112,7 @@ classdef KinZ < handle
             end
             if this.flag_depth_binned, flags = flags + 2^9; end
             if this.flag_depth_wfov, flags = flags + 2^10; end
+            if this.flag_imu_on, flags = flags + 2^11; end
             
             if this.flag_depth_wfov && this.flag_depth_binned
                 this.DepthWidth = 512;     
@@ -147,13 +151,14 @@ classdef KinZ < handle
             this.flag_depth = ismember('depth',varargin);
             this.flag_color = ismember('color',varargin);
             this.flag_infrared = ismember('infrared',varargin);
+            this.flag_imu = ismember('imu', varargin);
             capture_flags = uint16(0);
             
             if this.flag_color, capture_flags = capture_flags + 1; end
             if this.flag_depth, capture_flags = capture_flags + 2; end
             if this.flag_infrared, capture_flags = capture_flags + 2^2; end
+            if this.flag_imu, capture_flags = capture_flags + 2^11; end
 
-            
             [varargout{1:nargout}] = KinZ_mex('updateData', this.objectHandle, capture_flags);
         end
                 
@@ -244,6 +249,96 @@ classdef KinZ < handle
             [varargout{1:nargout}] = KinZ_mex('getCalibration', this.objectHandle, calib_flags);
         end
         
+        function varargout = getPointCloud(this, varargin)
+            % getPointCloud - returns a point cloud or a pointCloud object.
+            % Returns a n x 3 point cloud or a MATLAB 
+            % built-in pointCloud object.
+            % Name-Value Pair Arguments: 
+            %   'output' - output format of the pointcloud
+            %       'raw'(default) | 'pointCloud'
+            %   The 'raw' output consists of an nx3 points.
+            %   The 'pointCloud' output consist of a pointCloud object.
+            %   Note that this object was introduced with MATLAB 2015b.
+            %   Earlier versions will not support this type of output.
+            %
+            %   'color' - boolean value indicating if we want the colors of
+            %   each point of the point cloud. 
+            %       'false'(default) | 'true'
+            %   If 'color' is true and 'output' is 'raw', this method
+            %   returns two separate 217088nx3 matrices. One with the x,y,z
+            %   values of each point and the other with the R,G,B values of
+            %   each point.
+            %   If 'color' is true and 'output' is 'pointCloud', this
+            %   method return a pointCloud object with the color embedded.
+            %   Note that if 'color' is true, you must activate the color
+            %   camera on the Kin2 object creation. Otherwise it will
+            %   trigger a warning each time the method is called.
+            %
+            %   You must call updateData before and verify that there is valid data.
+            %   See pointCloudDemo.m and pointCloudDemo2.m
+            
+            % Parse inputs
+            p = inputParser;
+            defaultOutput = 'raw';
+            expectedOutputs = {'raw','pointCloud'};
+            defaultColor = 'false';
+            expectedColors = {'true','false'};
+            
+            p.addParameter('output',defaultOutput,@(x) any(validatestring(x,expectedOutputs)));
+            p.addParameter('color',defaultColor,@(x) any(validatestring(x,expectedColors)));
+            p.parse(varargin{:});
+            
+            % Required color?
+            if strcmp(p.Results.color,'true')
+                % If not color source selected, display a warning
+                if ~this.flag_color
+                    warning(['color source is not selected.' ...
+                        ' Please select the color source when creating Kin2 object.']);
+                    withColor = uint32(0);
+                else
+                    withColor = uint32(1);
+                end
+                
+            else
+                withColor = uint32(0);
+            end
+            
+            % Get the pointcloud from the Kinect V2 as a nx3 matrix
+            [varargout{1:2}] = KinZ_mex('getPointCloud', this.objectHandle, ...
+                                        this.DepthHeight, this.DepthWidth, ... 
+                                        withColor);
+            
+            % If the required output is a pointCloud object,            
+            if strcmp(p.Results.output,'pointCloud')
+                % check if this version of MATLAB suppor the pointCloud object
+                if exist('pointCloud','class') ~= 8
+                    this.delete;
+                    error('This version of Matlab do not Support pointCloud object.')
+                % pointCloud object supported!
+                else
+                    % Convert nx3 matrix to pointCloud MATLAB object with colors
+                    if withColor == 1
+                        varargout{1} = pointCloud(varargout{1},'Color',varargout{2});
+                    else
+                        varargout{1} = pointCloud(varargout{1});
+                    end
+                end  
+            end                     
+        end        
+
+        function varargout = getSensorData(this, varargin)
+            % imu_data = getIMU - returns a structure containing the sensor
+            % data
+            % You must call updateData before and verify that there is valid data.
+            % See videoDemo.m
+            
+            % Verify that the infrared source was selected
+            if ~this.flag_imu
+                this.delete;
+                error('No IMU source selected!');
+            end
+            [varargout{1:nargout}] = KinZ_mex('getSensorData', this.objectHandle);
+        end
     end % protected methods
 end % KinZ class
 
