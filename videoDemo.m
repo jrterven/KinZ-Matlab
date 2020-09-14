@@ -13,7 +13,8 @@ close all
 % '720p', '1080p', '1440p', '1535p', '2160p', '3072p'
 % 'binned' or 'unbinned'
 % 'wfov' or 'nfov'
-kz = KinZ('720p', 'binned', 'nfov');
+% 'sensors_on' or 'sensors_off'
+kz = KinZ('720p', 'binned', 'nfov', 'imu_on');
 
 % images sizes
 depth_width = kz.DepthWidth; 
@@ -58,15 +59,16 @@ disp('Press q on color figure to exit')
 while true
     % Get frames from Kinect and save them on underlying buffer
     % 'color','depth','infrared'
-    validData = kz.updateData('color','depth','infrared');
+    validData = kz.updateData('color','depth','infrared', 'imu');
     
     % Before processing the data, we need to make sure that a valid
     % frame was acquired.
     if validData
         % Copy data to Matlab matrices        
-        depth = kz.getDepth;
-        color = kz.getColor;
-        infrared = kz.getInfrared;
+        [depth, depth_timestamp] = kz.getDepth;
+        [color, color_timestamp] = kz.getColor;
+        [infrared, infrared_timestamp] = kz.getInfrared;
+        sensor_data = kz.getSensorData;
         
         % update depth figure
         set(h1,'CData',depth); 
@@ -78,6 +80,17 @@ while true
         % update infrared figure
         infrared = imadjust(infrared,[],[],0.5);
         set(h3,'CData',infrared); 
+        
+        disp('------------ Sensors Data ------------')
+        disp(['Temp: ' num2str(sensor_data.temp)]);
+        disp(['acc_x: ' num2str(sensor_data.acc_x)]);
+        disp(['acc_y: ' num2str(sensor_data.acc_y)]);
+        disp(['acc_z: ' num2str(sensor_data.acc_z)]);
+        disp(['acc_timestamp: ' num2str(sensor_data.acc_timestamp_usec)]);
+        disp(['gyro_x: ' num2str(sensor_data.gyro_x)]);
+        disp(['gyro_y: ' num2str(sensor_data.gyro_y)]);
+        disp(['gyro_z: ' num2str(sensor_data.gyro_z)]);
+        disp(['gyro_timestamp: ' num2str(sensor_data.gyro_timestamp_usec)]);
     end
     
     % If user presses 'q', exit loop
