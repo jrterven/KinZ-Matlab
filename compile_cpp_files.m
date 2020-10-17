@@ -12,9 +12,9 @@ function compile_cpp_files
 % - Matlab 2013a or newer
 %
 % Author: Juan R. Terven, jrterven@hotmail.com
-IncludePath = 'C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc';
-LibPath = 'C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64';
+IncludePath = '/usr/bin/';
+LibPath = '/usr/bin/';
 
 cd Mex
 mex ('-compatibleArrayDims', '-v', 'KinZ_mex.cpp', 'KinZ_base.cpp', ...
-    ['-L' LibPath],'-l:libk4a.so.1.3',['-I' IncludePath]);
+    ['-L' LibPath],'-l:libk4a.so.1.3', '-l:libk4abt.so.1.0' ,['-I' IncludePath]);
