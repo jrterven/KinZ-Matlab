@@ -18,6 +18,8 @@
 ///		Creation Date: March/21/2020
 ///     Modifications: 
 ///         Mar/21/2020: Start the project
+///         Sep/13/2020: Add sensors
+///         Sep/27/2020: Add body tracking
 ///////////////////////////////////////////////////////////////////////////
 #include "KinZ.h"
 #include "mex.h"
@@ -37,7 +39,13 @@ KinZ::KinZ(uint16_t sources)
 // Destructor. Release all buffers
 KinZ::~KinZ()
 {    
+    if (m_tracker != NULL) {
+        k4abt_tracker_shutdown(m_tracker);
+        k4abt_tracker_destroy(m_tracker);
+        m_tracker = NULL;
+    }
     if (m_device != NULL) {
+        k4a_device_stop_cameras(m_device);
         k4a_device_close(m_device);
         m_device = NULL;
     }
@@ -49,10 +57,22 @@ KinZ::~KinZ()
         k4a_image_release(m_image_d);
         m_image_d = NULL;
     }
+    if (m_image_ir) {
+        k4a_image_release(m_image_ir);
+        m_image_ir = NULL;
+    }
+    if (m_body_index) {
+        k4a_image_release(m_body_index);
+        m_body_index = NULL;
+    }
+    if (m_body_frame != NULL) {
+        k4abt_frame_release(m_body_frame);
+        m_body_frame = NULL;
+    }
     if (m_capture != NULL) {
         k4a_capture_release(m_capture);
         m_capture = NULL;
-    }    
+    }
 
     mexPrintf("Kinect Object destroyed\n");
 
@@ -63,8 +83,6 @@ KinZ::~KinZ()
 //////////////////////////////////////////////////////////////////////////
 void KinZ::init()
 {
-    mexPrintf("Flags inside init: %d", m_flags);
-
     uint32_t m_device_count = k4a_device_get_installed_count();
     if (m_device_count == 0) {
         mexPrintf("No K4A m_devices found\n");
@@ -168,17 +186,34 @@ void KinZ::init()
     m_imu_sensors_available = false;
     if (m_flags & kz::IMU_ON) {
         if(k4a_device_start_imu(m_device) == K4A_RESULT_SUCCEEDED) {
-            printf("IMU sensors started succesfully.");
+            mexPrintf("IMU sensors started succesfully.");
             m_imu_sensors_available = true;
         }
         else {
-            printf("IMU SENSORES FAILED INITIALIZATION");
+            mexPrintf("IMU SENSORES FAILED INITIALIZATION");
             m_imu_sensors_available = false;
         }
     }
-    else {
-        mexPrintf("NOT IMU ON!");
+
+    // Start body tracker
+    //m_body_frame = NULL;
+    //m_tracker = NULL;
+    
+    m_body_tracking_available = false;
+    m_num_bodies = 0;
+    if (m_flags & kz::BODY_TRACKING || m_flags & kz::BODY_INDEX) {
+        k4abt_tracker_configuration_t tracker_config = K4ABT_TRACKER_CONFIG_DEFAULT;
+        if(k4abt_tracker_create(&m_calibration, tracker_config, &m_tracker) == K4A_RESULT_SUCCEEDED) {
+            mexPrintf("Body tracking started succesfully.\n");
+            m_body_tracking_available = true;
+        }
+        else {
+            mexPrintf("BODY TRACKING FAILED TO INITIALIZE!\n");
+            m_body_tracking_available = false;
+        }
     }
+    
+
 } // end init
 
 ///////// Function: updateData ///////////////////////////////////////////
@@ -202,6 +237,14 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
     if (m_image_ir) {
         k4a_image_release(m_image_ir);
         m_image_ir = NULL;
+    }
+    if (m_body_index) {
+        k4a_image_release(m_body_index);
+        m_body_index = NULL;
+    }
+    if (m_body_frame) {
+        k4abt_frame_release(m_body_frame);
+        m_body_frame = NULL;
     }
     
     // Get a m_capture
@@ -263,7 +306,6 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
     }
 
     if((capture_flags & kz::IMU_ON) && m_imu_sensors_available) {
-        //mexPrintf("Updating sensor data");
         k4a_imu_sample_t imu_sample;
 
         // Capture a imu sample
@@ -274,10 +316,10 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
         case K4A_WAIT_RESULT_SUCCEEDED:
             break;
         case K4A_WAIT_RESULT_TIMEOUT:
-            printf("Timed out waiting for a imu sample\n");
+            mexPrintf("Timed out waiting for a imu sample\n");
             break;
         case K4A_WAIT_RESULT_FAILED:
-            printf("Failed to read a imu sample\n");
+            mexPrintf("Failed to read a imu sample\n");
             break;
         }
 
@@ -295,10 +337,44 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
             m_imu_data.gyro_timestamp_usec = imu_sample.gyro_timestamp_usec;
         }
     }
-    /*else {
-        mexPrintf("NOT Updating sensor data");
-        mexPrintf("%d", capture_flags);
-    }*/
+
+    if ((capture_flags & kz::BODY_TRACKING) && m_body_tracking_available) {
+        // Get body tracking data
+        k4a_wait_result_t queue_capture_result = k4abt_tracker_enqueue_capture(m_tracker, m_capture, K4A_WAIT_INFINITE);
+        if (queue_capture_result == K4A_WAIT_RESULT_TIMEOUT) {
+            // It should never hit timeout when K4A_WAIT_INFINITE is set.
+            mexPrintf("Error! Add capture to tracker process queue timeout!\n");
+        }
+        else if (queue_capture_result == K4A_WAIT_RESULT_FAILED) {
+            mexPrintf("Error! Add capture to tracker process queue failed!\n");
+        }
+        else {
+            m_body_frame = NULL;
+            k4a_wait_result_t pop_frame_result = k4abt_tracker_pop_result(m_tracker, &m_body_frame, K4A_WAIT_INFINITE);
+            if (pop_frame_result == K4A_WAIT_RESULT_SUCCEEDED)
+            {
+                m_num_bodies = k4abt_frame_get_num_bodies(m_body_frame);
+
+                if(capture_flags & kz::BODY_INDEX) {
+                    m_body_index = k4abt_frame_get_body_index_map(m_body_frame);
+
+                    if (m_body_index == NULL) {
+                        mexPrintf("Error: Fail to generate bodyindex map!\n");
+                    }
+                }
+            }
+            else if (pop_frame_result == K4A_WAIT_RESULT_TIMEOUT)
+            {
+                //  It should never hit timeout when K4A_WAIT_INFINITE is set.
+                mexPrintf("Error! Pop body frame result timeout!\n");
+            }
+            else
+            {
+                mexPrintf("Pop body frame result failed!\n");
+            }
+        }
+    } // body tracking
+
     
     if (newDepthData && newColorData && newInfraredData)
         valid[0] = 1;
@@ -617,3 +693,53 @@ void KinZ::getSensorData(Imu_sample &imu_data) {
     imu_data = m_imu_data;
 }
 
+void KinZ::getNumBodies(uint32_t &numBodies) {
+    numBodies = m_num_bodies;
+}
+
+///////// Function: getBodyIndexMap ///////////////////////////////////////////
+// Copy getBodyIndexMap frame to Matlab matrix
+// You must call updateData first
+//////////////////////////////////////////////////////////////////////////
+void KinZ::getBodyIndexMap(bool returnId, uint8_t bodyIndex[],
+                           uint64_t& time, bool& validData)
+{
+    if(m_body_index) {
+        int w = k4a_image_get_width_pixels(m_body_index);
+        int h = k4a_image_get_height_pixels(m_body_index);
+        int stride = k4a_image_get_stride_bytes(m_body_index);
+        uint8_t* dataBuffer = k4a_image_get_buffer(m_body_index);
+
+        if (returnId)
+            changeBodyIndexToBodyId(dataBuffer, w, h);
+
+        // Copy body index frame to output matrix
+        int colSize = w;
+        for (int x=0, k=0; x<w; x++)
+            for (int y=0; y<h; y++,k++) {
+                int idx = y * colSize + x;
+
+                bodyIndex[k] = dataBuffer[idx];
+            }
+
+        validData = true;
+        time = k4a_image_get_system_timestamp_nsec(m_body_index);
+    }
+    else 
+        validData = false;
+} // end getDepth
+
+void KinZ::changeBodyIndexToBodyId(uint8_t* image_data, int width, int height) {
+    for(int i=0; i < width*height; i++) {
+        uint8_t index = *image_data;
+
+        uint32_t body_id = k4abt_frame_get_body_id	(m_body_frame, (uint32_t)index);
+        *image_data = (uint8_t)body_id;
+        image_data++;
+    }
+}
+
+ void KinZ::getBodies(k4abt_frame_t &body_frame, k4a_calibration_t &calibration) {
+     body_frame = m_body_frame;
+     calibration = m_calibration;
+ }

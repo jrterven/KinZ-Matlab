@@ -333,7 +333,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mxSetFieldByNumber(plhs[0],0,13, t);
         return;
     }
-    // getDepthCalibration method
+
+    // getSensorData method
     if (!strcmp("getSensorData", cmd)) 
     { 
         //Assign field names
@@ -379,6 +380,164 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mxSetFieldByNumber(plhs[0],0,8, gyro_timestamp);
         return;
     }
+
+    // getNumBodies method
+    if (!strcmp("getNumBodies", cmd)) 
+    {
+        plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
+        uint32_t *num_bodies = (uint32_t*)mxGetPr(plhs[0]);
+        
+        // Call the class function
+        KinZ_instance->getNumBodies(*num_bodies);
+        
+        return;
+    }
+
+    // getBodies method
+    if (!strcmp("getBodies", cmd)) 
+    {
+        //Assign field names
+        const char *field_names[] = {"Id", "Position3d", "Position2d_rgb", "Position2d_depth",
+                                     "Orientation", "Confidence"};
+        
+        // Call the class function
+        k4abt_frame_t body_frame;
+        k4a_calibration_t calibration;
+        KinZ_instance->getBodies(body_frame, calibration);
+
+        // number of bodies detected        
+        int num_bodies = k4abt_frame_get_num_bodies(body_frame);
+        
+        //Allocate memory for the structure
+        mwSize dims[2] = {1, num_bodies};
+        plhs[0] = mxCreateStructArray(2,dims,6,field_names);
+        
+        // Copy the body data to the output matrices
+        for (uint32_t i = 0; i < num_bodies; i++) {
+            k4abt_body_t body;
+            if (k4abt_frame_get_body_skeleton(body_frame, i, &body.skeleton) == K4A_RESULT_SUCCEEDED) {
+                body.id = k4abt_frame_get_body_id(body_frame, i);
+
+                // output data
+                mxArray *body_id_mx, *position3d_mx, *orientation_mx, *confidence_mx;
+                mxArray *position2d_rgb_mx, *position2d_depth_mx;
+            
+                //Create mxArray data structures to hold the data
+                //to be assigned for the structure.
+                body_id_mx = mxCreateNumericMatrix(1, 1, mxUINT32_CLASS, mxREAL);
+                uint32_t *bodyIdptr = (uint32_t*)mxGetPr(body_id_mx);
+                position3d_mx  = mxCreateDoubleMatrix(3, 32, mxREAL);
+                double* pos3dptr = (double*)mxGetPr(position3d_mx);
+                position2d_rgb_mx  = mxCreateNumericMatrix(2, 32, mxUINT32_CLASS, mxREAL);
+                uint32_t* pos2d_rgbptr = (uint32_t*)mxGetPr(position2d_rgb_mx);
+                position2d_depth_mx  = mxCreateNumericMatrix(2, 32, mxUINT32_CLASS, mxREAL);
+                uint32_t* pos2d_depthptr = (uint32_t*)mxGetPr(position2d_depth_mx);
+                orientation_mx  = mxCreateDoubleMatrix(4,32,mxREAL);
+                double* orientationptr = (double*)mxGetPr(orientation_mx);
+                confidence_mx = mxCreateNumericMatrix(1, 32, mxUINT32_CLASS, mxREAL);
+                uint32_t *confidenceptr = (uint32_t*)mxGetPr(confidence_mx);
+
+                bodyIdptr[0] = (uint32_t)body.id;
+        
+                // For each joint
+                for(int j=0; j<32; j++)
+                {
+                    k4a_float3_t position = body.skeleton.joints[j].position;
+                    k4a_quaternion_t orientation = body.skeleton.joints[j].orientation;
+                    k4abt_joint_confidence_level_t confidence_level = body.skeleton.joints[j].confidence_level;
+
+                    // Copy joints position to output matrix 
+                    pos3dptr[j*3] = position.v[0];
+                    pos3dptr[j*3 + 1] = position.v[1];
+                    pos3dptr[j*3 + 2] = position.v[2];
+                    
+                    // Copy joints orientations to output matrix
+                    orientationptr[j*4] = orientation.v[0];
+                    orientationptr[j*4 + 1] = orientation.v[1];
+                    orientationptr[j*4 + 2] = orientation.v[2];
+                    orientationptr[j*4 + 3] = orientation.v[3];
+
+                    // Copy joints tracking state to output matrix
+                    confidenceptr[j] = (uint32_t)confidence_level;
+
+                    // project the 3D coordinates to the color and depth cameras
+                    k4a_float2_t color_coords, depth_coords;
+                    int val;
+                    if (k4a_calibration_3d_to_2d(&calibration, &position, 
+                                                K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR,
+                                                &color_coords, &val) == K4A_RESULT_SUCCEEDED) {
+                        pos2d_rgbptr[j*2] = (int)color_coords.xy.x;
+                        pos2d_rgbptr[j*2 + 1] = (int)color_coords.xy.y;
+                    }
+                    else {
+                        pos2d_rgbptr[j*2] = -1;
+                        pos2d_rgbptr[j*2 + 1] = -1;
+                    }
+
+                    if (k4a_calibration_3d_to_2d(&calibration, &position, 
+                                                K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_DEPTH,
+                                                &depth_coords, &val) == K4A_RESULT_SUCCEEDED) {
+                        pos2d_depthptr[j*2] = (int)depth_coords.xy.x;
+                        pos2d_depthptr[j*2 + 1] = (int)depth_coords.xy.y;
+                    }
+                    else {
+                        pos2d_depthptr[j*2] = -1;
+                        pos2d_depthptr[j*2 + 1] = -1;
+                    }
+                }
+                
+                //Assign the output matrices to the struct
+                mxSetFieldByNumber(plhs[0],i,0, body_id_mx);
+                mxSetFieldByNumber(plhs[0],i,1, position3d_mx);
+                mxSetFieldByNumber(plhs[0],i,2, position2d_rgb_mx);
+                mxSetFieldByNumber(plhs[0],i,3, position2d_depth_mx);
+                mxSetFieldByNumber(plhs[0],i,4, orientation_mx);
+                mxSetFieldByNumber(plhs[0],i,5, confidence_mx);
+            } // if valid body_frame
+        } // for each body
+        
+        return;
+    }
+
+    // getInfrared method
+    if (!strcmp("getBodyIndexMap", cmd)) 
+    {        
+        int height, width;  
+        height = (int)mxGetScalar(prhs[2]); 
+        width = (int)mxGetScalar(prhs[3]); 
+        bool returnId = (int)mxGetScalar(prhs[4]);
+
+        uint8_t *bodyIndex;   // pointer to output data
+        int bodyIndexDim[2]={height,width};
+        int invalidbodyIndex[2] = {0,0};
+        int timeDim[2] = {1,1};
+        
+        // Check parameters
+        if (nlhs < 0 || nrhs < 2)
+            mexErrMsgTxt("getBodyIndexMap: Unexpected arguments.");
+        
+        // Reserve space for outputs
+        plhs[0] = mxCreateNumericArray(2, bodyIndexDim, mxUINT8_CLASS, mxREAL); 
+        
+        plhs[1] = mxCreateNumericArray(2,timeDim, mxUINT64_CLASS, mxREAL);
+        uint64_t *timeStamp = (uint64_t*)mxGetPr(plhs[1]);
+        
+        // Assign pointers to the output parameters
+        bodyIndex = (uint8_t*)mxGetPr(plhs[0]);
+      
+        // Call the class function
+        bool valid;
+        KinZ_instance->getBodyIndexMap(returnId, bodyIndex, *timeStamp, valid);
+        
+        if(!valid)
+        {
+            plhs[0] = mxCreateNumericArray(2, invalidbodyIndex, mxUINT8_CLASS, mxREAL);
+            timeStamp[0] = 0;
+        }
+        
+        return;
+    }
+
     // getPointCloud method
     if (!strcmp("getPointCloud", cmd)) 
     {        

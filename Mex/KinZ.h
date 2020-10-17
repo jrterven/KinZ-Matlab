@@ -24,6 +24,7 @@
 
 ///////////////////////////////////////////////////////////////////////////
 #include <k4a/k4a.h>
+#include <k4abt.h>
 #include <vector>
 
 #define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p); (p)=NULL; } }
@@ -43,7 +44,9 @@ namespace kz
         C3072 = 256,
         D_BINNED = 512,
         D_WFOV = 1024,
-        IMU_ON = 2048
+        IMU_ON = 2048,
+        BODY_TRACKING = 4096,
+        BODY_INDEX = 8192
     };
     typedef unsigned short int Flags;
 }
@@ -85,20 +88,10 @@ public:
     void getInfrared(uint16_t infrared[], uint64_t& time, bool& validInfrared);
     void getCalibration(k4a_calibration_t &calibration);
     void getPointCloud(double pointCloud[], unsigned char colors[], bool color, bool& validData);   
-    void getSensorData(Imu_sample &imu_data); 
-    
-    /************ Mappings **************/
-//    void mapDepthPoints2Color(double depthCoords[], int size, UINT16 colorCoords[]);
-//    void mapDepthPoints2Camera(double depthCoords[], int size, double cameraCoords[]);
-    //bool mapDepthFrame2Color(ColorSpacePoint* depth2ColorMapping);
-
-//	void mapColorPoints2Depth(double colorCoords[], int size, UINT16 depthCoords[]);
-//    void mapColorPoints2Camera(double colorCoords[], int size, double cameraCoords[]);
-    
-//    void mapCameraPoints2Depth(double cameraCoords[], int size, UINT16 depthCoords[]);
-//    void mapCameraPoints2Color(double cameraCoords[], int size, UINT16 colorCoords[]);
-    
-//    void alignColor2Depth(unsigned char alignedImage[], bool& validData);
+    void getSensorData(Imu_sample &imu_data);
+    void getNumBodies(uint32_t &numBodies);
+    void getBodies(k4abt_frame_t &body_frame, k4a_calibration_t &calibration);
+    void getBodyIndexMap(bool returnId, uint8_t bodyIndex[], uint64_t& time, bool& validData);
     
 private:    
     // Current Kinect
@@ -125,21 +118,19 @@ private:
     // calibration and transformation object
     k4a_calibration_t m_calibration;
     k4a_transformation_t m_transformation = NULL;
+
+    // Body tracking
+    k4abt_tracker_t m_tracker = NULL;
+    k4abt_frame_t m_body_frame = NULL;
+    bool m_body_tracking_available;
+    uint32_t m_num_bodies;
+    k4a_image_t m_body_index = nullptr;
     
 	int initialize(int resolution, bool wide_fov, bool binned, uint8_t framerate, uint8_t deviceIndex);
     bool align_depth_to_color(int width, int height, k4a_image_t &transformed_depth_image);
     bool align_color_to_depth(int width, int height, k4a_image_t &transformed_color_image);
     bool depth_image_to_point_cloud(int width, int height, k4a_image_t &xyz_image);
-
+    void changeBodyIndexToBodyId(uint8_t* image_data, int width, int height);
     
-//    Calibration getDepthCalibration();
-//    Calibration getColorCalibration();
-//    std::string getSerialNumber();
-//    void setExposure(int);
-//    const int getExposure();
-//    void setGain(int);
-//    std::vector<std::vector<int> > map_coords_color_2d_to_depth_2d(std::vector<std::vector<int> > &color_coords);
-//    std::vector<std::vector<int> > map_coords_depth_2d_to_color_2d(std::vector<std::vector<int> > &depth_coords);
-//    std::vector<std::vector<int> > map_coords_color_2d_to_3D(std::vector<std::vector<int> > &color_coords, bool depth_reference);
 }; // KinZ class definition
 

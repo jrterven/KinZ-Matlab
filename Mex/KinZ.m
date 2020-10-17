@@ -33,6 +33,9 @@ classdef KinZ < handle
     properties (SetAccess = private, Hidden = true)
         objectHandle; % Handle to the underlying C++ class instance
         
+        % Bodies colors
+        bodyColors = ['r','b','g','y','m','c','r','b','g','y','m','c','r','b','g','y','m','c'];
+        
         % Selected sources
         flag_depth = false;
         flag_color = false;
@@ -47,6 +50,10 @@ classdef KinZ < handle
         flag_depth_binned = false;
         flag_depth_wfov = false;
         flag_imu_on = false;
+        flag_body_tracking_on = false;
+        flag_get_bodies = false;
+        flag_get_body_index = false;
+        
     end
     
     properties
@@ -78,6 +85,7 @@ classdef KinZ < handle
             this.flag_depth_binned = ismember('binned',varargin);
             this.flag_depth_wfov = ismember('wfov',varargin);
             this.flag_imu_on = ismember('imu_on', varargin);
+            this.flag_body_tracking_on = ismember('bodyTracking', varargin);
             flags = uint16(0);
             
             if this.flag_res_720
@@ -113,6 +121,7 @@ classdef KinZ < handle
             if this.flag_depth_binned, flags = flags + 2^9; end
             if this.flag_depth_wfov, flags = flags + 2^10; end
             if this.flag_imu_on, flags = flags + 2^11; end
+            if this.flag_body_tracking_on, flags = flags + 2^12; end
             
             if this.flag_depth_wfov && this.flag_depth_binned
                 this.DepthWidth = 512;     
@@ -152,12 +161,17 @@ classdef KinZ < handle
             this.flag_color = ismember('color',varargin);
             this.flag_infrared = ismember('infrared',varargin);
             this.flag_imu = ismember('imu', varargin);
+            this.flag_get_bodies = ismember('bodies', varargin);
+            this.flag_get_body_index = ismember('body_index', varargin);
             capture_flags = uint16(0);
             
             if this.flag_color, capture_flags = capture_flags + 1; end
             if this.flag_depth, capture_flags = capture_flags + 2; end
             if this.flag_infrared, capture_flags = capture_flags + 2^2; end
             if this.flag_imu, capture_flags = capture_flags + 2^11; end
+            if this.flag_get_bodies, capture_flags = capture_flags + 2^12; end
+            if this.flag_get_body_index, capture_flags = capture_flags + 2^13; end
+            
 
             [varargout{1:nargout}] = KinZ_mex('updateData', this.objectHandle, capture_flags);
         end
@@ -327,18 +341,120 @@ classdef KinZ < handle
         end        
 
         function varargout = getSensorData(this, varargin)
-            % imu_data = getIMU - returns a structure containing the sensor
+            % imu_data = getSensorData - returns a structure containing the sensor
             % data
             % You must call updateData before and verify that there is valid data.
             % See videoDemo.m
             
-            % Verify that the infrared source was selected
+            % Verify that the imu source was selected
             if ~this.flag_imu
                 this.delete;
                 error('No IMU source selected!');
             end
             [varargout{1:nargout}] = KinZ_mex('getSensorData', this.objectHandle);
         end
+        
+        function varargout = getNumBodies(this, varargin)
+            % num_bodies = getNumBodies - returns the number of bodies found
+            % You must call updateData before and verify that there is valid data.
+            % See bodyTrackingDemo.m
+            
+            % Verify that the imu source was selected
+            if ~this.flag_get_bodies
+                this.delete;
+                error('No Bodies source selected!');
+            end
+            [varargout{1:nargout}] = KinZ_mex('getNumBodies', this.objectHandle);
+        end
+        
+        function varargout = getBodies(this, varargin)
+            % bodies_data = getBodies - returns a structure containing the sensor
+            % data
+            % You must call updateData before and verify that there is valid data.
+            % See bodyTrackingDemo.m
+            
+            % Verify that the imu source was selected
+            if ~this.flag_get_bodies
+                this.delete;
+                error('No Bodies source selected!');
+            end
+            [varargout{1:nargout}] = KinZ_mex('getBodies', this.objectHandle);
+        end
+        
+        function varargout = getBodyIndexMap(this, varargin)
+            % body_index_map = getBodyIndexMap - returns a structure containing the sensor
+            % data
+            % You must call updateData before and verify that there is valid data.
+            % See bodyTrackingDemo.m
+            
+            p = inputParser;
+            defaultInput = 'false';
+            expectedInputs = {'true','false'};
+            
+            p.addParameter('withIds',defaultInput,@(x) any(validatestring(x,expectedInputs)));
+            p.parse(varargin{:});
+            
+            % If the required output is a pointCloud object,            
+            if strcmp(p.Results.withIds,'true')
+                returnIds = true;
+            else
+                returnIds = false;
+            end
+            
+            
+            % Verify that the body index source was selected
+            if ~this.flag_get_body_index
+                this.delete;
+                error('No Body index source selected!');
+            end
+            [varargout{1:nargout}] = KinZ_mex('getBodyIndexMap', this.objectHandle, this.DepthHeight, this.DepthWidth, returnIds);
+        end
+        
+        function drawBodies(this,handle,bodies,destination,jointsSize, limbsThickness)
+            % drawBodies - Draw bodies on depth image
+            % Input Parameters: 
+            % 1) handle: image axes handle
+            % 2) bodies: bodies structure returned by getBodies method
+            % 3) destination: destination image (depth or color)
+            % 4) jointsSize: joints' size (circle raddii)
+            % 5) bonesThickness: Bones' Thickness
+            % Output: none
+            % See bodyTrackingDemo.m
+            numBodies = size(bodies,2);
+            
+            % Draw the limbs
+            body_limbs = [27 4; 4 3; 3 2; 2 1; 4 5; 4 12; 5 6; 12 13; ...
+                          6 7; 13 14; 7 8; 14 15; 8 11; 15 18; 8 9; ...
+                          15 16; 9 10; 15 16; 1 19; 1 23; 19 20; ...
+                          22 23; 20 21; 24 25; 21 22; 24 25];
+            
+            % Draw each body
+            for i=1:numBodies                
+                if strcmp(destination,'depth')
+                    % Get the joints in depth image space
+                    pos2D = bodies(i).Position2d_depth;
+                elseif strcmp(destination,'color')
+                    pos2D = bodies(i).Position2d_rgb;
+                end
+                
+                % Select the color with the Id
+                body_id = bodies(i).Id;
+                
+                % Draw the joints
+                viscircles(handle, pos2D', ones(32,1)*jointsSize,'EdgeColor',this.bodyColors(body_id));
+                
+                 % Draw the limbs
+                 for j=1:length(body_limbs)
+                     joint1 = body_limbs(j, 1);
+                     joint2 = body_limbs(j, 2);
+                     xs = [pos2D(1,joint1) pos2D(1,joint2)];
+                     ys = [pos2D(2,joint1) pos2D(2,joint2)];
+                     line(xs, ys, 'Color', this.bodyColors(body_id), ...
+                         'LineWidth', limbsThickness, 'Parent', handle);
+                 end
+            end
+        end
+                
     end % protected methods
 end % KinZ class
 
