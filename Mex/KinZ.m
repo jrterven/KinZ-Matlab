@@ -37,22 +37,22 @@ classdef KinZ < handle
         bodyColors = ['r','b','g','y','m','c','r','b','g','y','m','c','r','b','g','y','m','c'];
         
         % Selected sources
-        flag_depth = false;
-        flag_color = false;
-        flag_infrared = false;
-        flag_imu = false;
-        flag_res_720 = false;
-        flag_res_1080 = false;
-        flag_res_1440 = false;
-        flag_res_1536 = false;
-        flag_res_2160 = false;
-        flag_res_3072 = false;
-        flag_depth_binned = false;
-        flag_depth_wfov = false;
-        flag_imu_on = false;
-        flag_body_tracking_on = false;
-        flag_get_bodies = false;
-        flag_get_body_index = false;
+        flagDepth = false;
+        flagColor = false;
+        flagInfrared = false;
+        flagImu = false;
+        flagRes720 = false;
+        flagRes1080 = false;
+        flagRes1440 = false;
+        flagRes1536 = false;
+        flagRes2160 = false;
+        flagRes3072 = false;
+        flagDepthBinned = false;
+        flagDepthWfov = false;
+        flagImuOn = false;
+        flagBodyTracking = false;
+        flagGetBodies = false;
+        flagGetBodyIndex = false;
         
     end
     
@@ -76,69 +76,69 @@ classdef KinZ < handle
             % k2 = KinZ('color','depth','infrared');
             
             % Get the flags
-            this.flag_res_720 = ismember('720p',varargin);
-            this.flag_res_1080 = ismember('1080p',varargin);
-            this.flag_res_1440 = ismember('1440p',varargin);
-            this.flag_res_1536 = ismember('1535p',varargin);
-            this.flag_res_2160 = ismember('2160p',varargin);
-            this.flag_res_3072 = ismember('3072p',varargin);
-            this.flag_depth_binned = ismember('binned',varargin);
-            this.flag_depth_wfov = ismember('wfov',varargin);
-            this.flag_imu_on = ismember('imu_on', varargin);
-            this.flag_body_tracking_on = ismember('bodyTracking', varargin);
+            this.flagRes720 = ismember('720p',varargin);
+            this.flagRes1080 = ismember('1080p',varargin);
+            this.flagRes1440 = ismember('1440p',varargin);
+            this.flagRes1536 = ismember('1535p',varargin);
+            this.flagRes2160 = ismember('2160p',varargin);
+            this.flagRes3072 = ismember('3072p',varargin);
+            this.flagDepthBinned = ismember('binned',varargin);
+            this.flagDepthWfov = ismember('wfov',varargin);
+            this.flagImuOn = ismember('imu_on', varargin);
+            this.flagBodyTracking = ismember('bodyTracking', varargin);
             flags = uint16(0);
             
-            if this.flag_res_720
+            if this.flagRes720
                 flags = flags + 2^3; 
                 this.ColorWidth = 1280;
                 this.ColorHeight = 720;
             end
-            if this.flag_res_1080
+            if this.flagRes1080
                 flags = flags + 2^4;
                 this.ColorWidth = 1920;
                 this.ColorHeight = 1080;
             end
-            if this.flag_res_1440
+            if this.flagRes1440
                 flags = flags + 2^5;
                 this.ColorWidth = 2560;
                 this.ColorHeight = 1440;
             end
-            if this.flag_res_1536
+            if this.flagRes1536
                 flags = flags + 2^6; 
                 this.ColorWidth = 2048;
                 this.ColorHeight = 1536;
             end
-            if this.flag_res_2160
+            if this.flagRes2160
                 flags = flags + 2^7; 
                 this.ColorWidth = 3840;
                 this.ColorHeight = 2160;
             end
-            if this.flag_res_3072
+            if this.flagRes3072
                 flags = flags + 2^8; 
                 this.ColorWidth = 4096;
                 this.ColorHeight = 3072;
             end
-            if this.flag_depth_binned, flags = flags + 2^9; end
-            if this.flag_depth_wfov, flags = flags + 2^10; end
-            if this.flag_imu_on, flags = flags + 2^11; end
-            if this.flag_body_tracking_on, flags = flags + 2^12; end
+            if this.flagDepthBinned, flags = flags + 2^9; end
+            if this.flagDepthWfov, flags = flags + 2^10; end
+            if this.flagImuOn, flags = flags + 2^11; end
+            if this.flagBodyTracking, flags = flags + 2^12; end
             
-            if this.flag_depth_wfov && this.flag_depth_binned
+            if this.flagDepthWfov && this.flagDepthBinned
                 this.DepthWidth = 512;     
                 this.DepthHeight = 512;
             end
                 
-            if this.flag_depth_wfov && ~this.flag_depth_binned
+            if this.flagDepthWfov && ~this.flagDepthBinned
                 this.DepthWidth = 1024;     
                 this.DepthHeight = 1024;
             end
             
-            if ~this.flag_depth_wfov && this.flag_depth_binned
+            if ~this.flagDepthWfov && this.flagDepthBinned
                 this.DepthWidth = 320;     
                 this.DepthHeight = 288;
             end
             
-            if ~this.flag_depth_wfov && ~this.flag_depth_binned
+            if ~this.flagDepthWfov && ~this.flagDepthBinned
                 this.DepthWidth = 640;     
                 this.DepthHeight = 576;
             end 
@@ -153,100 +153,100 @@ classdef KinZ < handle
         end
         
         %% video Sources        
-        function varargout = updateData(this, varargin)
-            % updateData - Update Kinect data. 
+        function varargout = getframes(this, varargin)
+            % updateData - Capture Kinect data. 
             % Call this function before grabbing new data.
             % Return: flag indicating valid data.
-            this.flag_depth = ismember('depth',varargin);
-            this.flag_color = ismember('color',varargin);
-            this.flag_infrared = ismember('infrared',varargin);
-            this.flag_imu = ismember('imu', varargin);
-            this.flag_get_bodies = ismember('bodies', varargin);
-            this.flag_get_body_index = ismember('body_index', varargin);
+            this.flagDepth = ismember('depth',varargin);
+            this.flagColor = ismember('color',varargin);
+            this.flagInfrared = ismember('infrared',varargin);
+            this.flagImu = ismember('imu', varargin);
+            this.flagGetBodies = ismember('bodies', varargin);
+            this.flagGetBodyIndex = ismember('bodyIndex', varargin);
             capture_flags = uint16(0);
             
-            if this.flag_color, capture_flags = capture_flags + 1; end
-            if this.flag_depth, capture_flags = capture_flags + 2; end
-            if this.flag_infrared, capture_flags = capture_flags + 2^2; end
-            if this.flag_imu, capture_flags = capture_flags + 2^11; end
-            if this.flag_get_bodies, capture_flags = capture_flags + 2^12; end
-            if this.flag_get_body_index, capture_flags = capture_flags + 2^13; end
+            if this.flagColor, capture_flags = capture_flags + 1; end
+            if this.flagDepth, capture_flags = capture_flags + 2; end
+            if this.flagInfrared, capture_flags = capture_flags + 2^2; end
+            if this.flagImu, capture_flags = capture_flags + 2^11; end
+            if this.flagGetBodies, capture_flags = capture_flags + 2^12; end
+            if this.flagGetBodyIndex, capture_flags = capture_flags + 2^13; end
             
 
-            [varargout{1:nargout}] = KinZ_mex('updateData', this.objectHandle, capture_flags);
+            [varargout{1:nargout}] = KinZ_mex('getframes', this.objectHandle, capture_flags);
         end
                 
-        function varargout = getDepth(this, varargin)
+        function varargout = getdepth(this, varargin)
             % depth = getDepth - returns a 512 x 512 16-bit depth frame frame from Kinect for Azure. 
             % You must call updateData before and verify that there is valid data.
             % See videoDemo.m
             
             % Verify that the depth source was selected
-            if ~this.flag_depth
+            if ~this.flagDepth
                 this.delete;
                 error('No depth source selected!');
             end
             
-            [varargout{1:nargout}] = KinZ_mex('getDepth', this.objectHandle, this.DepthHeight, this.DepthWidth);
+            [varargout{1:nargout}] = KinZ_mex('getdepth', this.objectHandle, this.DepthHeight, this.DepthWidth);
         end
         
-        function varargout = getDepthAligned(this, varargin)
+        function varargout = getdepthaligned(this, varargin)
             % depth = getDepth - returns a 512 x 512 16-bit depth frame frame from Kinect for Azure. 
             % You must call updateData before and verify that there is valid data.
             % See videoDemo.m
             
             % Verify that the depth source was selected
-            if ~this.flag_depth
+            if ~this.flagDepth
                 this.delete;
                 error('No depth source selected!');
             end
             
-            [varargout{1:nargout}] = KinZ_mex('getDepthAligned', this.objectHandle, this.ColorHeight, this.ColorWidth);
+            [varargout{1:nargout}] = KinZ_mex('getdepth_aligned', this.objectHandle, this.ColorHeight, this.ColorWidth);
         end
                 
-        function varargout = getColor(this, varargin)
+        function varargout = getcolor(this, varargin)
             % color = getColor - returns a 1280 x 720 3-channel color frame frame from Kinect for Azure. 
             % You must call updateData before and verify that there is valid data.
             % See videoDemo.m
             
             % Verify that the color source was selected
-            if ~this.flag_color
+            if ~this.flagColor
                 this.delete;
                 error('No color source selected!');
             end
             
-            [varargout{1:nargout}] = KinZ_mex('getColor', this.objectHandle,this.ColorHeight, this.ColorWidth);
+            [varargout{1:nargout}] = KinZ_mex('getcolor', this.objectHandle,this.ColorHeight, this.ColorWidth);
         end
         
-        function varargout = getColorAligned(this, varargin)
+        function varargout = getcoloraligned(this, varargin)
             % depth = getDepth - returns a 512 x 512 16-bit depth frame frame from Kinect for Azure. 
             % You must call updateData before and verify that there is valid data.
             % See videoDemo.m
             
             % Verify that the depth source was selected
-            if ~this.flag_depth
+            if ~this.flagDepth
                 this.delete;
                 error('No depth source selected!');
             end
             
-            [varargout{1:nargout}] = KinZ_mex('getColorAligned', this.objectHandle, this.DepthHeight, this.DepthWidth);
+            [varargout{1:nargout}] = KinZ_mex('getcoloraligned', this.objectHandle, this.DepthHeight, this.DepthWidth);
         end
                 
-        function varargout = getInfrared(this, varargin)
+        function varargout = getinfrared(this, varargin)
             % infrared = getInfrared - returns a 512 x 512 16-bit infrared frame from Kinect for Azure. 
             % [infrared, timeStamp] = getInfrared - also returns the relative timestamp.
             % You must call updateData before and verify that there is valid data.
             % See videoDemo.m
             
             % Verify that the infrared source was selected
-            if ~this.flag_infrared
+            if ~this.flagInfrared
                 this.delete;
                 error('No infrared source selected!');
             end
-            [varargout{1:nargout}] = KinZ_mex('getInfrared', this.objectHandle, this.DepthHeight, this.DepthWidth);
+            [varargout{1:nargout}] = KinZ_mex('getinfrared', this.objectHandle, this.DepthHeight, this.DepthWidth);
         end
         
-        function varargout = getCalibration(this, varargin)
+        function varargout = getcalibration(this, varargin)
             % getDepthCalibration - return the depth camera calibration.
             % The calibration data are returned inside a structure containing:
             % fx, fy, cx, cy, k1, k2, k3, k4, k5, k6, p1, p2
@@ -260,10 +260,10 @@ classdef KinZ < handle
             if get_depth_calib, calib_flags = 1; end
             if get_color_calib, calib_flags = 2; end
             
-            [varargout{1:nargout}] = KinZ_mex('getCalibration', this.objectHandle, calib_flags);
+            [varargout{1:nargout}] = KinZ_mex('getcalibration', this.objectHandle, calib_flags);
         end
         
-        function varargout = getPointCloud(this, varargin)
+        function varargout = getpointcloud(this, varargin)
             % getPointCloud - returns a point cloud or a pointCloud object.
             % Returns a n x 3 point cloud or a MATLAB 
             % built-in pointCloud object.
@@ -305,7 +305,7 @@ classdef KinZ < handle
             % Required color?
             if strcmp(p.Results.color,'true')
                 % If not color source selected, display a warning
-                if ~this.flag_color
+                if ~this.flagColor
                     warning(['color source is not selected.' ...
                         ' Please select the color source when creating Kin2 object.']);
                     withColor = uint32(0);
@@ -318,7 +318,7 @@ classdef KinZ < handle
             end
             
             % Get the pointcloud from the Kinect V2 as a nx3 matrix
-            [varargout{1:2}] = KinZ_mex('getPointCloud', this.objectHandle, ...
+            [varargout{1:2}] = KinZ_mex('getpointcloud', this.objectHandle, ...
                                         this.DepthHeight, this.DepthWidth, ... 
                                         withColor);
             
@@ -340,48 +340,48 @@ classdef KinZ < handle
             end                     
         end        
 
-        function varargout = getSensorData(this, varargin)
+        function varargout = getsensordata(this, varargin)
             % imu_data = getSensorData - returns a structure containing the sensor
             % data
             % You must call updateData before and verify that there is valid data.
             % See videoDemo.m
             
             % Verify that the imu source was selected
-            if ~this.flag_imu
+            if ~this.flagImu
                 this.delete;
                 error('No IMU source selected!');
             end
-            [varargout{1:nargout}] = KinZ_mex('getSensorData', this.objectHandle);
+            [varargout{1:nargout}] = KinZ_mex('getsensordata', this.objectHandle);
         end
         
-        function varargout = getNumBodies(this, varargin)
+        function varargout = getnumbodies(this, varargin)
             % num_bodies = getNumBodies - returns the number of bodies found
             % You must call updateData before and verify that there is valid data.
             % See bodyTrackingDemo.m
             
             % Verify that the imu source was selected
-            if ~this.flag_get_bodies
+            if ~this.flagGetBodies
                 this.delete;
                 error('No Bodies source selected!');
             end
-            [varargout{1:nargout}] = KinZ_mex('getNumBodies', this.objectHandle);
+            [varargout{1:nargout}] = KinZ_mex('getnumbodies', this.objectHandle);
         end
         
-        function varargout = getBodies(this, varargin)
+        function varargout = getbodies(this, varargin)
             % bodies_data = getBodies - returns a structure containing the sensor
             % data
             % You must call updateData before and verify that there is valid data.
             % See bodyTrackingDemo.m
             
             % Verify that the imu source was selected
-            if ~this.flag_get_bodies
+            if ~this.flagGetBodies
                 this.delete;
                 error('No Bodies source selected!');
             end
-            [varargout{1:nargout}] = KinZ_mex('getBodies', this.objectHandle);
+            [varargout{1:nargout}] = KinZ_mex('getbodies', this.objectHandle);
         end
         
-        function varargout = getBodyIndexMap(this, varargin)
+        function varargout = getbodyindexmap(this, varargin)
             % body_index_map = getBodyIndexMap - returns a structure containing the sensor
             % data
             % You must call updateData before and verify that there is valid data.
@@ -403,14 +403,14 @@ classdef KinZ < handle
             
             
             % Verify that the body index source was selected
-            if ~this.flag_get_body_index
+            if ~this.flagGetBodyIndex
                 this.delete;
                 error('No Body index source selected!');
             end
-            [varargout{1:nargout}] = KinZ_mex('getBodyIndexMap', this.objectHandle, this.DepthHeight, this.DepthWidth, returnIds);
+            [varargout{1:nargout}] = KinZ_mex('getbodyindexmap', this.objectHandle, this.DepthHeight, this.DepthWidth, returnIds);
         end
         
-        function drawBodies(this,handle,bodies,destination,jointsSize, limbsThickness)
+        function drawbodies(this,handle,bodies,destination,jointsSize, limbsThickness)
             % drawBodies - Draw bodies on depth image
             % Input Parameters: 
             % 1) handle: image axes handle
@@ -423,7 +423,7 @@ classdef KinZ < handle
             numBodies = size(bodies,2);
             
             % Draw the limbs
-            body_limbs = [27 4; 4 3; 3 2; 2 1; 4 5; 4 12; 5 6; 12 13; ...
+            bodyLimbs = [27 4; 4 3; 3 2; 2 1; 4 5; 4 12; 5 6; 12 13; ...
                           6 7; 13 14; 7 8; 14 15; 8 11; 15 18; 8 9; ...
                           15 16; 9 10; 15 16; 1 19; 1 23; 19 20; ...
                           22 23; 20 21; 24 25; 21 22; 24 25];
@@ -444,9 +444,9 @@ classdef KinZ < handle
                 viscircles(handle, pos2D', ones(32,1)*jointsSize,'EdgeColor',this.bodyColors(body_id));
                 
                  % Draw the limbs
-                 for j=1:length(body_limbs)
-                     joint1 = body_limbs(j, 1);
-                     joint2 = body_limbs(j, 2);
+                 for j=1:length(bodyLimbs)
+                     joint1 = bodyLimbs(j, 1);
+                     joint2 = bodyLimbs(j, 2);
                      xs = [pos2D(1,joint1) pos2D(1,joint2)];
                      ys = [pos2D(2,joint1) pos2D(2,joint2)];
                      line(xs, ys, 'Color', this.bodyColors(body_id), ...

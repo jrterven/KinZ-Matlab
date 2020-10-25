@@ -58,7 +58,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // Call the KinZ methods
     
     // updateData method   
-    if (!strcmp("updateData", cmd)) 
+    if (!strcmp("getframes", cmd)) 
     {        
         // Check parameters
         if (nlhs < 0 || nrhs < 2)
@@ -70,13 +70,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         uint8_t *valid = (uint8_t*)mxGetPr(plhs[0]);
         
         // Call the class function
-        KinZ_instance->updateData(capture_flags, valid);
+        KinZ_instance->get_frames(capture_flags, valid);
         
         return;
     }
     
     // getDepth method
-    if (!strcmp("getDepth", cmd)) 
+    if (!strcmp("getdepth", cmd)) 
     {        
          int height, width;
          height = (int)mxGetScalar(prhs[2]); 
@@ -100,7 +100,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         // Call the class function
         bool validDepth;
-        KinZ_instance->getDepth(depth, *timeStamp, validDepth);
+        KinZ_instance->get_depth(depth, *timeStamp, validDepth);
         
         if(!validDepth)
         {
@@ -112,7 +112,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     // getDepthAligned method
-    if (!strcmp("getDepthAligned", cmd)) 
+    if (!strcmp("getdepthaligned", cmd)) 
     {        
          int height, width;
          height = (int)mxGetScalar(prhs[2]); 
@@ -125,7 +125,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
          
         // Check parameters
         if (nlhs < 0 || nrhs < 2)
-            mexErrMsgTxt("getDepthAligned: Unexpected arguments.");
+            mexErrMsgTxt("getdepthaligned: Unexpected arguments.");
         
         // Reserve space for output variables
         plhs[0] = mxCreateNumericArray(2, depthDim, mxUINT16_CLASS, mxREAL);
@@ -136,7 +136,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         // Call the class function
         bool validDepth;
-        KinZ_instance->getDepthAligned(depth, *timeStamp, validDepth);
+        KinZ_instance->get_depth_aligned(depth, *timeStamp, validDepth);
         
         if(!validDepth)
         {
@@ -148,7 +148,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
     
     // getColor method
-    if (!strcmp("getColor", cmd)) 
+    if (!strcmp("getcolor", cmd)) 
     {        
         int height, width;  
         height = (int)mxGetScalar(prhs[2]); 
@@ -161,7 +161,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         // Check parameters
         if (nlhs < 0 || nrhs < 2)
-            mexErrMsgTxt("getColor: Unexpected arguments.");
+            mexErrMsgTxt("getcolor: Unexpected arguments.");
         
         // Reserve space for outputs
         plhs[0] = mxCreateNumericArray(3, colorDim, mxUINT8_CLASS, mxREAL);
@@ -174,7 +174,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       
         // Call the class function
         bool validColor;
-        KinZ_instance->getColor(rgbImage, *timeStamp, validColor);
+        KinZ_instance->get_color(rgbImage, *timeStamp, validColor);
         
         if(!validColor)
         {
@@ -186,7 +186,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     // getColorAligned method
-    if (!strcmp("getColorAligned", cmd)) 
+    if (!strcmp("getcoloraligned", cmd)) 
     {        
          int height, width;
          height = (int)mxGetScalar(prhs[2]); 
@@ -199,7 +199,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
          
         // Check parameters
         if (nlhs < 0 || nrhs < 2)
-            mexErrMsgTxt("getColorAligned: Unexpected arguments.");
+            mexErrMsgTxt("getcoloraligned: Unexpected arguments.");
         
         // Reserve space for output variables
         plhs[0] = mxCreateNumericArray(3, colorDim, mxUINT8_CLASS, mxREAL);
@@ -210,7 +210,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         // Call the class function
         bool validColor;
-        KinZ_instance->getColorAligned(color, *timeStamp, validColor);
+        KinZ_instance->get_color_aligned(color, *timeStamp, validColor);
         
         if(!validColor)
         {
@@ -222,7 +222,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
     
     // getInfrared method
-    if (!strcmp("getInfrared", cmd)) 
+    if (!strcmp("getinfrared", cmd)) 
     {        
         int height, width;  
         height = (int)mxGetScalar(prhs[2]); 
@@ -235,7 +235,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         // Check parameters
         if (nlhs < 0 || nrhs < 2)
-            mexErrMsgTxt("getInfrared: Unexpected arguments.");
+            mexErrMsgTxt("getinfrared: Unexpected arguments.");
         
         // Reserve space for outputs
         plhs[0] = mxCreateNumericArray(2, infraredDim, mxUINT16_CLASS, mxREAL); 
@@ -248,7 +248,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       
         // Call the class function
         bool validInfrared;
-        KinZ_instance->getInfrared(infrared, *timeStamp, validInfrared);
+        KinZ_instance->get_infrared(infrared, *timeStamp, validInfrared);
         
         if(!validInfrared)
         {
@@ -260,20 +260,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     // getDepthCalibration method
-    if (!strcmp("getCalibration", cmd)) 
+    if (!strcmp("getcalibration", cmd)) 
     { 
         uint16_t calib_flag = (int)mxGetScalar(prhs[2]);
         
         //Assign field names
         const char *field_names[] = {"fx", "fy", "cx","cy",
-                                     "k1", "k2", "k3", "k4", 
-                                     "k5", "k6", "p1", "p2",
-                                     "R", "t"};  
+                                     "radDist", "tanDist", "R", "t"};  
                                 
         k4a_calibration_t calibration;
         
         // call the class method
-        KinZ_instance->getCalibration(calibration);
+        KinZ_instance->get_calibration(calibration);
         
         k4a_calibration_camera_t  calib;
         if(calib_flag == 2)
@@ -283,13 +281,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         //Allocate memory for the structure
         mwSize dims[2] = {1, 1};
-        plhs[0] = mxCreateStructArray(2,dims,14,field_names);
+        plhs[0] = mxCreateStructArray(2,dims,8,field_names);
         
         // Copy the intrinsic parameters to the the output variables
         
         // output data
-        mxArray *fx, *fy, *cx, *cy, *k1, *k2, *k3, *k4, *k5, *k6, *p1, *p2;
-        mxArray *R, *t;
+        mxArray *fx, *fy, *cx, *cy;
+        mxArray *rad_dist, *tan_dist, *R, *t;
 
         //Create mxArray data structures to hold the data
         //to be assigned for the structure.
@@ -297,17 +295,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         fy  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.fy);
         cx  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.cx);
         cy  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.cy);
-        k1  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k1);
-        k2  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k2);
-        k3  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k3);
-        k4  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k4);
-        k5  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k5);
-        k6  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.k6);
-        p1  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.p1);
-        p2  = mxCreateDoubleScalar(calib.intrinsics.parameters.param.p2);
+        rad_dist = mxCreateDoubleMatrix(6, 1, mxREAL);
+        tan_dist = mxCreateDoubleMatrix(2, 1, mxREAL);
         R = mxCreateDoubleMatrix(3, 3, mxREAL);
         t = mxCreateDoubleMatrix(3, 1, mxREAL);
         
+        double *rad_dist_vals = mxGetPr(rad_dist);
+        rad_dist_vals[0] = calib.intrinsics.parameters.param.k1;
+        rad_dist_vals[1] = calib.intrinsics.parameters.param.k2;
+        rad_dist_vals[2] = calib.intrinsics.parameters.param.k3;
+        rad_dist_vals[3] = calib.intrinsics.parameters.param.k4;
+        rad_dist_vals[4] = calib.intrinsics.parameters.param.k5;
+        rad_dist_vals[5] = calib.intrinsics.parameters.param.k6;
+        
+        double *tan_dist_vals = mxGetPr(tan_dist);
+        tan_dist_vals[0] = calib.intrinsics.parameters.param.p1;
+        tan_dist_vals[1] = calib.intrinsics.parameters.param.p2;
+            
         double *rot_vals = mxGetPr(R);
         for(int i=0; i<9; i++)
             rot_vals[i] = calib.extrinsics.rotation[i];
@@ -321,21 +325,15 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mxSetFieldByNumber(plhs[0],0,1, fy);
         mxSetFieldByNumber(plhs[0],0,2, cx);
         mxSetFieldByNumber(plhs[0],0,3, cy);
-        mxSetFieldByNumber(plhs[0],0,4, k1);
-        mxSetFieldByNumber(plhs[0],0,5, k2);
-        mxSetFieldByNumber(plhs[0],0,6, k3);
-        mxSetFieldByNumber(plhs[0],0,7, k4);
-        mxSetFieldByNumber(plhs[0],0,8, k5);
-        mxSetFieldByNumber(plhs[0],0,9, k6);
-        mxSetFieldByNumber(plhs[0],0,10, p1);
-        mxSetFieldByNumber(plhs[0],0,11, p2);
-        mxSetFieldByNumber(plhs[0],0,12, R);
-        mxSetFieldByNumber(plhs[0],0,13, t);
+        mxSetFieldByNumber(plhs[0],0,4, rad_dist);
+        mxSetFieldByNumber(plhs[0],0,5, tan_dist);
+        mxSetFieldByNumber(plhs[0],0,6, R);
+        mxSetFieldByNumber(plhs[0],0,7, t);
         return;
     }
 
     // getSensorData method
-    if (!strcmp("getSensorData", cmd)) 
+    if (!strcmp("getsensordata", cmd)) 
     { 
         //Assign field names
         const char *field_names[] = {"temp", "acc_x", "acc_y", "acc_z",
@@ -346,7 +344,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         Imu_sample imu_data;
         
         // call the class method
-        KinZ_instance->getSensorData(imu_data);
+        KinZ_instance->get_sensor_data(imu_data);
         
         //Allocate memory for the structure
         mwSize dims[2] = {1, 1};
@@ -382,19 +380,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     // getNumBodies method
-    if (!strcmp("getNumBodies", cmd)) 
+    if (!strcmp("getnumbodies", cmd)) 
     {
         plhs[0] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
         uint32_t *num_bodies = (uint32_t*)mxGetPr(plhs[0]);
         
         // Call the class function
-        KinZ_instance->getNumBodies(*num_bodies);
+        KinZ_instance->get_num_bodies(*num_bodies);
         
         return;
     }
 
     // getBodies method
-    if (!strcmp("getBodies", cmd)) 
+    if (!strcmp("getbodies", cmd)) 
     {
         //Assign field names
         const char *field_names[] = {"Id", "Position3d", "Position2d_rgb", "Position2d_depth",
@@ -403,7 +401,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         // Call the class function
         k4abt_frame_t body_frame;
         k4a_calibration_t calibration;
-        KinZ_instance->getBodies(body_frame, calibration);
+        KinZ_instance->get_bodies(body_frame, calibration);
 
         // number of bodies detected        
         int num_bodies = k4abt_frame_get_num_bodies(body_frame);
@@ -500,7 +498,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     // getInfrared method
-    if (!strcmp("getBodyIndexMap", cmd)) 
+    if (!strcmp("getbodyindexmap", cmd)) 
     {        
         int height, width;  
         height = (int)mxGetScalar(prhs[2]); 
@@ -514,7 +512,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         // Check parameters
         if (nlhs < 0 || nrhs < 2)
-            mexErrMsgTxt("getBodyIndexMap: Unexpected arguments.");
+            mexErrMsgTxt("getbodyindexmap: Unexpected arguments.");
         
         // Reserve space for outputs
         plhs[0] = mxCreateNumericArray(2, bodyIndexDim, mxUINT8_CLASS, mxREAL); 
@@ -527,7 +525,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       
         // Call the class function
         bool valid;
-        KinZ_instance->getBodyIndexMap(returnId, bodyIndex, *timeStamp, valid);
+        KinZ_instance->get_body_index_map(returnId, bodyIndex, *timeStamp, valid);
         
         if(!valid)
         {
@@ -539,7 +537,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
 
     // getPointCloud method
-    if (!strcmp("getPointCloud", cmd)) 
+    if (!strcmp("getpointcloud", cmd)) 
     {        
         int height, width;
         height = (int)mxGetScalar(prhs[2]); 
@@ -572,11 +570,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
                 
         // Check parameters
         if (nlhs < 0 || nrhs < 2)
-            mexErrMsgTxt("getPointCloud: Unexpected arguments.");
+            mexErrMsgTxt("getpointcloud: Unexpected arguments.");
       
         // Call the class function
         bool validData;
-        KinZ_instance->getPointCloud(pointCloud, colors, bwithColor, validData);
+        KinZ_instance->get_pointcloud(pointCloud, colors, bwithColor, validData);
         
         if(!validData)
         {

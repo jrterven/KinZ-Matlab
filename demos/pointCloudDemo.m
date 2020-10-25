@@ -4,7 +4,7 @@
 % Juan R. Terven, jrterven@hotmail.com
 % Diana M. Cordova, diana_mce@hotmail.com
 % 
-addpath('Mex');
+addpath('../Mex');
 clear all
 close all
 
@@ -16,13 +16,13 @@ close all
 kz = KinZ('720p', 'binned', 'nfov');
 
 % images sizes
-depth_width = kz.DepthWidth; 
-depth_height = kz.DepthHeight; 
+depthWidth = kz.DepthWidth; 
+depthHeight = kz.DepthHeight; 
 outOfRange = 2000;
 
 % Create matrices for the images
-depth = zeros(depth_height,depth_width,'uint16');
-pc = zeros(depth_height*depth_width,3);
+depth = zeros(depthHeight,depthWidth,'uint16');
+pc = zeros(depthHeight*depthWidth,3);
 
 % depth stream figure
 f1=figure;
@@ -41,16 +41,16 @@ set(f2,'keypress','k=get(f2,''currentchar'');'); % listen keypress
 k=[];
 
 disp('Press q on any figure to exit')
-downsample = 2; % subsample pointcloud
+downSample = 2; % subsample pointcloud
 while true
     % Get frames from Kinect and save them on underlying buffer
-    validData = kz.updateData('color','depth');
+    validData = kz.getframes('color','depth');
     
     % Before processing the data, we need to make sure that a valid
     % frame was acquired.
     if validData
         % Copy data to Matlab matrices
-        depth = kz.getDepth;
+        depth = kz.getdepth;
         
         try
             set(h1,'CData',depth); 
@@ -59,7 +59,7 @@ while true
         end
         
         % Obtain the point cloud with color
-        [pc, pcColors] = kz.getPointCloud('output','raw','color','true');
+        [pc, pcColors] = kz.getpointcloud('output','raw','color','true');
         pcColors = double(pcColors)/255.0;
         
         try

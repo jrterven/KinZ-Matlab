@@ -1,10 +1,9 @@
-% VIDEODEMO Illustrates how to use the KinZ class which is an interface for
-%   Kinect for Azure SDK functionality
+% BODYTRACKINGDEMO Illustrates how to use the KinZ class for body tracking.
 %
 % Juan R. Terven, jrterven@hotmail.com
 % Diana M. Cordova, diana_mce@hotmail.com
 % 
-addpath('Mex');
+addpath('../Mex');
 clear all
 close all
 
@@ -17,18 +16,18 @@ close all
 kz = KinZ('720p', 'binned', 'nfov', 'imu_off', 'bodyTracking');
 
 % images sizes
-depth_width = kz.DepthWidth; 
-depth_height = kz.DepthHeight; 
+depthWidth = kz.DepthWidth; 
+depthHeight = kz.DepthHeight; 
 outOfRange = 2000;
-color_width = kz.ColorWidth; 
-color_height = kz.ColorHeight;
+colorWidth = kz.ColorWidth; 
+colorHeight = kz.ColorHeight;
 
 % Color image is to big, let's scale it down
 colorScale = 1;
 
 % Create matrices for the images
-depth = zeros(depth_height,depth_width,'uint16');
-color = zeros(color_height*colorScale,color_width*colorScale,3,'uint8');
+depth = zeros(depthHeight,depthWidth,'uint16');
+color = zeros(colorHeight*colorScale,colorWidth*colorScale,3,'uint8');
 
 % depth stream figure
 d.h = figure;
@@ -52,16 +51,17 @@ disp('Press q on color figure to exit')
 while true
     % Get frames from Kinect and save them on underlying buffer
     % 'color','depth','infrared'
-    validData = kz.updateData('color','depth', 'bodies');
+    validData = kz.getframes('color','depth', 'bodies');
     
     % Before processing the data, we need to make sure that a valid
     % frame was acquired.
     if validData
         % Copy data to Matlab matrices        
-        [depth, depth_timestamp] = kz.getDepth;
-        [color, color_timestamp] = kz.getColor;
-        num_bodies = kz.getNumBodies;
-        disp(num_bodies)
+        [depth, depthTimestamp] = kz.getdepth;
+        [color, colorTimestamp] = kz.getcolor;
+        numBodies = kz.getnumbodies;
+        disp(numBodies)
+        bodies = kz.getbodies();    
        
         % update depth figure
         d.im = imshow(depth, 'Parent', d.ax);
@@ -70,11 +70,11 @@ while true
         color = imresize(color,colorScale);
         c.im = imshow(color, 'Parent', c.ax);
         
-        bodies = kz.getBodies();    
-        kz.drawBodies(d.ax,bodies,'depth',2, 1);
+        % Draw bodies on depth image
+        kz.drawbodies(d.ax,bodies,'depth',2, 1);
         
         % Draw bodies on color image
-        kz.drawBodies(c.ax,bodies,'color',2, 1);
+        kz.drawbodies(c.ax,bodies,'color',2, 1);
 
     end
     

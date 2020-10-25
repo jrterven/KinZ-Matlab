@@ -7,7 +7,7 @@
 % Juan R. Terven, jrterven@hotmail.com
 % Diana M. Cordova, diana_mce@hotmail.com
 % 
-addpath('Mex');
+addpath('../Mex');
 clear all
 close all
 
@@ -18,13 +18,13 @@ close all
 % 'wfov' or 'nfov'
 kz = KinZ('720p', 'binned', 'nfov');
 
-depth_width = kz.DepthWidth; 
-depth_height = kz.DepthHeight; 
+depthWidth = kz.DepthWidth; 
+depthHeight = kz.DepthHeight; 
 outOfRange = 2000;
 
 % Create matrices for the images
-depth = zeros(depth_height,depth_width,'uint16');
-pc = pointCloud(zeros(depth_height*depth_width,3));
+depth = zeros(depthHeight,depthWidth,'uint16');
+pc = pointCloud(zeros(depthHeight*depthWidth,3));
 
 % depth stream figure
 figure, h1 = imshow(depth,[0 outOfRange]);
@@ -42,13 +42,13 @@ downsample = 2; % subsample pointcloud
 % Main Loop
 while true
     % Get frames from Kinect and save them on underlying buffer
-    validData = kz.updateData('color','depth');
+    validData = kz.getframes('color','depth');
     
     % Before processing the data, we need to make sure that a valid
     % frame was acquired.
     if validData
         % Copy data to Matlab matrices
-        depth = kz.getDepth;
+        depth = kz.getdepth;
         
         % Display the depth image, 
         % if the user closes the window, the program ends
@@ -63,7 +63,7 @@ while true
         % pointCloud object. 
         % For MATLAB versions older than 2015b, use 'output','raw' and use
         % scatter3 to plot the point cloud. See pointCloudDemo1.m
-        pc = kz.getPointCloud('output','pointCloud','color','true');
+        pc = kz.getpointcloud('output','pointCloud','color','true');
         
         % Display the point cloud,
         % if the user closes the window, the program ends

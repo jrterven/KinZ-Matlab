@@ -80,18 +80,18 @@ public:
 	void close(); 			// Close Kinect
     
     /************ Data Sources *************/
-    void updateData(uint16_t capture_flags, uint8_t valid[]);
-    void getDepth(uint16_t depth[], uint64_t& time, bool& validDepth);
-    void getDepthAligned(uint16_t depth[], uint64_t& time, bool& validDepth);
-    void getColor(uint8_t rgbImage[], uint64_t& time, bool& validColor);
-    void getColorAligned(uint8_t color[], uint64_t& time, bool& valid);
-    void getInfrared(uint16_t infrared[], uint64_t& time, bool& validInfrared);
-    void getCalibration(k4a_calibration_t &calibration);
-    void getPointCloud(double pointCloud[], unsigned char colors[], bool color, bool& validData);   
-    void getSensorData(Imu_sample &imu_data);
-    void getNumBodies(uint32_t &numBodies);
-    void getBodies(k4abt_frame_t &body_frame, k4a_calibration_t &calibration);
-    void getBodyIndexMap(bool returnId, uint8_t bodyIndex[], uint64_t& time, bool& validData);
+    void get_frames(uint16_t capture_flags, uint8_t valid[]);
+    void get_depth(uint16_t depth[], uint64_t& time, bool& valid_depth);
+    void get_depth_aligned(uint16_t depth[], uint64_t& time, bool& valid_depth);
+    void get_color(uint8_t rgbImage[], uint64_t& time, bool& valid_color);
+    void get_color_aligned(uint8_t color[], uint64_t& time, bool& valid);
+    void get_infrared(uint16_t infrared[], uint64_t& time, bool& valid_infrared);
+    void get_calibration(k4a_calibration_t &calibration);
+    void get_pointcloud(double pointcloud[], unsigned char colors[], bool color, bool& valid_data);   
+    void get_sensor_data(Imu_sample &imu_data);
+    void get_num_bodies(uint32_t &num_bodies);
+    void get_bodies(k4abt_frame_t &body_frame, k4a_calibration_t &calibration);
+    void get_body_index_map(bool return_id, uint8_t body_index[], uint64_t& time, bool& valid_data);
     
 private:    
     // Current Kinect
@@ -126,11 +126,11 @@ private:
     uint32_t m_num_bodies;
     k4a_image_t m_body_index = nullptr;
     
-	int initialize(int resolution, bool wide_fov, bool binned, uint8_t framerate, uint8_t deviceIndex);
+	int initialize(int resolution, bool wide_fov, bool binned, uint8_t framerate, uint8_t device_index);
     bool align_depth_to_color(int width, int height, k4a_image_t &transformed_depth_image);
     bool align_color_to_depth(int width, int height, k4a_image_t &transformed_color_image);
     bool depth_image_to_point_cloud(int width, int height, k4a_image_t &xyz_image);
-    void changeBodyIndexToBodyId(uint8_t* image_data, int width, int height);
+    void change_body_index_to_body_id(uint8_t* image_data, int width, int height);
     
 }; // KinZ class definition
 

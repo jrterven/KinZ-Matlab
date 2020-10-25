@@ -219,7 +219,7 @@ void KinZ::init()
 ///////// Function: updateData ///////////////////////////////////////////
 // Get current data from Kinect and save it in the member variables
 //////////////////////////////////////////////////////////////////////////
-void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
+void KinZ::get_frames(uint16_t capture_flags, uint8_t valid[])
 {
     // Release images before next acquisition
     if (m_capture) {
@@ -248,18 +248,18 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
     }
     
     // Get a m_capture
-    bool newCapture;
+    bool new_capture;
     switch (k4a_device_get_capture(m_device, &m_capture, TIMEOUT_IN_MS)) {
         case K4A_WAIT_RESULT_SUCCEEDED:
-            newCapture = true;
+            new_capture = true;
             break;
         case K4A_WAIT_RESULT_TIMEOUT:
             mexPrintf("Timed out waiting for a m_capture\n");
-            newCapture = false;
+            new_capture = false;
             break;
         case K4A_WAIT_RESULT_FAILED:
             mexPrintf("Failed to read a m_capture\n");
-            newCapture = false;
+            new_capture = false;
             // mexPrintf("Restarting streaming ...");
             // k4a_device_stop_cameras	(m_device);	
             // if(K4A_RESULT_SUCCEEDED != k4a_device_start_cameras(m_device, &m_config)) {
@@ -269,37 +269,37 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
             break;
     }
 
-    bool newDepthData = false;
-    bool newColorData = false;
-    bool newInfraredData = false;
+    bool new_depth_data = false;
+    bool new_color_data = false;
+    bool new_infrared_data = false;
 
-    if(newCapture) {
+    if(new_capture) {
         // Get Depth frame
-        newDepthData = true;
+        new_depth_data = true;
         if (capture_flags & kz::DEPTH) {
             m_image_d = k4a_capture_get_depth_image(m_capture);
             if (m_image_d == NULL) {
-                newDepthData = false;
+                new_depth_data = false;
                 mexPrintf("Could not read depth image\n");
             }
         }
 
         // Get Color frame
-        newColorData = true;
+        new_color_data = true;
         if (capture_flags & kz::COLOR) {
             m_image_c = k4a_capture_get_color_image(m_capture);
             if (m_image_c == NULL) {
-                newColorData = false;
+                new_color_data = false;
                 mexPrintf("Could not read color image\n");
             }
         }
         
         // Get IR image
-        newInfraredData = true;
+        new_infrared_data = true;
         if (capture_flags & kz::INFRARED) {
             m_image_ir = k4a_capture_get_ir_image(m_capture);
             if (m_image_ir == NULL) {
-                newInfraredData = false;
+                new_infrared_data = false;
                 mexPrintf("Could not read IR image");
             }
         }
@@ -376,7 +376,7 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
     } // body tracking
 
     
-    if (newDepthData && newColorData && newInfraredData)
+    if (new_depth_data && new_color_data && new_infrared_data)
         valid[0] = 1;
     else
         valid[0] = 0;
@@ -386,7 +386,7 @@ void KinZ::updateData(uint16_t capture_flags, uint8_t valid[])
 // Copy color frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getColor(uint8_t rgbImage[], uint64_t& time, bool& validColor)
+void KinZ::get_color(uint8_t rgb_image[], uint64_t& time, bool& valid_color)
 {
     if(m_image_c) {
         int w = k4a_image_get_width_pixels(m_image_c);
@@ -397,20 +397,20 @@ void KinZ::getColor(uint8_t rgbImage[], uint64_t& time, bool& validColor)
 
         // copy color buffer to Matlab output
         // sweep the entire matrix copying data to output matrix
-        int colSize = 4*w;
+        int col_size = 4*w;
         for (int x=0, k=0; x < w*4; x+=4)
             for (int y=0; y <h; y++,k++)
             {
-                int idx = y * colSize + x;
-                rgbImage[k] = dataBuffer[idx+2];
-                rgbImage[numColorPix + k] = dataBuffer[idx+1];
-                rgbImage[numColorPix*2 + k] = dataBuffer[idx];                   
+                int idx = y * col_size + x;
+                rgb_image[k] = dataBuffer[idx+2];
+                rgb_image[numColorPix + k] = dataBuffer[idx+1];
+                rgb_image[numColorPix*2 + k] = dataBuffer[idx];                   
             }
-        validColor = true;
+        valid_color = true;
         time = k4a_image_get_system_timestamp_nsec(m_image_c);
     }
     else
-        validColor = false;
+        valid_color = false;
 
 } // end getColor
 
@@ -418,7 +418,7 @@ void KinZ::getColor(uint8_t rgbImage[], uint64_t& time, bool& validColor)
 // Copy depth frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getDepth(uint16_t depth[], uint64_t& time, bool& validDepth)
+void KinZ::get_depth(uint16_t depth[], uint64_t& time, bool& valid_depth)
 {
     if(m_image_d) {
         int w = k4a_image_get_width_pixels(m_image_d);
@@ -427,10 +427,10 @@ void KinZ::getDepth(uint16_t depth[], uint64_t& time, bool& validDepth)
         uint8_t* dataBuffer = k4a_image_get_buffer(m_image_d);
 
         // Copy Depth frame to output matrix
-        int colSize = 2*w;
+        int col_size = 2*w;
         for (int x=0, k=0;x<w*2;x+=2)
             for (int y=0;y<h;y++,k++) {
-                int idx = y * colSize + x;
+                int idx = y * col_size + x;
                 uint16_t lsb, msb;
 
                 lsb = dataBuffer[idx];
@@ -438,18 +438,18 @@ void KinZ::getDepth(uint16_t depth[], uint64_t& time, bool& validDepth)
                 depth[k] = msb * 256 + lsb;
             }
 
-        validDepth = true;
+        valid_depth = true;
         time = k4a_image_get_system_timestamp_nsec(m_image_d);
     }
     else 
-        validDepth = false;
+        valid_depth = false;
 } // end getDepth
 
 ///////// Function: getDepthAligned ///////////////////////////////////////////
 // Copy depth aligned to color frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getDepthAligned(uint16_t depth[], uint64_t& time, bool& validDepth)
+void KinZ::get_depth_aligned(uint16_t depth[], uint64_t& time, bool& valid_depth)
 {
     if(m_image_d) {
         k4a_image_t image_dc;
@@ -466,10 +466,10 @@ void KinZ::getDepthAligned(uint16_t depth[], uint64_t& time, bool& validDepth)
         uint8_t* dataBuffer = k4a_image_get_buffer(image_dc);
 
         // Copy Depth frame to output matrix
-        int colSize = 2*w;
+        int col_size = 2*w;
         for (int x=0, k=0;x<w*2;x+=2)
             for (int y=0;y<h;y++,k++) {
-                int idx = y * colSize + x;
+                int idx = y * col_size + x;
                 uint16_t lsb, msb;
 
                 lsb = dataBuffer[idx];
@@ -477,11 +477,11 @@ void KinZ::getDepthAligned(uint16_t depth[], uint64_t& time, bool& validDepth)
                 depth[k] = msb * 256 + lsb;
             }
 
-        validDepth = true;
+        valid_depth = true;
         time = time = k4a_image_get_system_timestamp_nsec(m_image_c);
     }
     else 
-        validDepth = false;
+        valid_depth = false;
 } // end getDepthAligned
 
 
@@ -489,7 +489,7 @@ void KinZ::getDepthAligned(uint16_t depth[], uint64_t& time, bool& validDepth)
 // Copy color aligned to depth frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getColorAligned(uint8_t color[], uint64_t& time, bool& valid)
+void KinZ::get_color_aligned(uint8_t color[], uint64_t& time, bool& valid)
 {
     if(m_image_d && m_image_c) {
         k4a_image_t image_cd;
@@ -507,10 +507,10 @@ void KinZ::getColorAligned(uint8_t color[], uint64_t& time, bool& valid)
         int numColorPix = w*h;
 
         // Copy frame to output matrix
-        int colSize = 4*w;
+        int col_size = 4*w;
         for (int x=0, k=0; x < w*4; x+=4)
             for (int y=0; y <h; y++,k++) {
-                int idx = y * colSize + x;
+                int idx = y * col_size + x;
                 color[k] = dataBuffer[idx+2];
                 color[numColorPix + k] = dataBuffer[idx+1];
                 color[numColorPix*2 + k] = dataBuffer[idx];                   
@@ -527,7 +527,7 @@ void KinZ::getColorAligned(uint8_t color[], uint64_t& time, bool& valid)
 // Copy infrared frame to Matlab matrix
 // You must call updateData first
 ///////////////////////////////////////////////////////////////////////////
-void KinZ::getInfrared(uint16_t infrared[], uint64_t& time, bool& validInfrared)
+void KinZ::get_infrared(uint16_t infrared[], uint64_t& time, bool& valid_infrared)
 {
     if(m_image_ir) {
         int w = k4a_image_get_width_pixels(m_image_ir);
@@ -536,10 +536,10 @@ void KinZ::getInfrared(uint16_t infrared[], uint64_t& time, bool& validInfrared)
         uint8_t* dataBuffer = k4a_image_get_buffer(m_image_ir);
 
         // copy dataBuffer to output matrix
-        int colSize = 2*w;
+        int col_size = 2*w;
         for (int x=0, k=0;x<w*2;x+=2)
             for (int y=0;y<h;y++,k++) {
-                int idx = y * colSize + x;
+                int idx = y * col_size + x;
                 uint16_t lsb, msb;
 
                 lsb = dataBuffer[idx];
@@ -547,11 +547,11 @@ void KinZ::getInfrared(uint16_t infrared[], uint64_t& time, bool& validInfrared)
                 infrared[k] = msb * 256 + lsb;
             }
         
-        validInfrared = true;
+        valid_infrared = true;
         time = k4a_image_get_system_timestamp_nsec(m_image_ir);
     }
     else
-        validInfrared = false;
+        valid_infrared = false;
 } // end getInfrared
 
 bool KinZ::align_depth_to_color(int width, int height, k4a_image_t &transformed_depth_image){
@@ -592,7 +592,7 @@ bool KinZ::align_color_to_depth(int width, int height, k4a_image_t &transformed_
     return true;
 }
 
-void KinZ::getCalibration(k4a_calibration_t &calibration) {
+void KinZ::get_calibration(k4a_calibration_t &calibration) {
     calibration = m_calibration;
 }
 
@@ -627,10 +627,10 @@ bool KinZ::depth_image_to_point_cloud(int width, int height, k4a_image_t &xyz_im
 // Get camera points from depth frame and copy them to Matlab matrix
 // You must call updateData first and have depth activated
 ///////////////////////////////////////////////////////////////////////////
-void KinZ::getPointCloud(double pointCloud[], unsigned char colors[], 
-                         bool color, bool& validData)
+void KinZ::get_pointcloud(double pointcloud[], unsigned char colors[], 
+                         bool color, bool& valid_data)
 {   
-    validData = false; 
+    valid_data = false; 
     if(m_image_d) {
         k4a_image_t point_cloud_image = NULL;
         k4a_image_t color_image = NULL;
@@ -663,9 +663,9 @@ void KinZ::getPointCloud(double pointCloud[], unsigned char colors[],
                 Y = point_cloud_image_data[3 * i + 1];
                 Z = point_cloud_image_data[3 * i + 2];
 
-                pointCloud[i] = X;
-                pointCloud[i + numDepthPoints] = Y;
-                pointCloud[i + numDepthPoints + numDepthPoints] = Z;
+                pointcloud[i] = X;
+                pointcloud[i + numDepthPoints] = Y;
+                pointcloud[i + numDepthPoints + numDepthPoints] = Z;
 
                 if(color && valid_color_transform) {
                     uint8_t R, G, B;
@@ -678,22 +678,22 @@ void KinZ::getPointCloud(double pointCloud[], unsigned char colors[],
                     colors[i + numDepthPoints + numDepthPoints] = B;
                 }
             }
-            validData = true;
+            valid_data = true;
         } 
         else {
-            pointCloud[0] = 0;
-            pointCloud[1] = 0;
-            pointCloud[2] = 0;
+            pointcloud[0] = 0;
+            pointcloud[1] = 0;
+            pointcloud[2] = 0;
             mexPrintf("Error getting Pointcloud\n");
         }
     }
 }
 
-void KinZ::getSensorData(Imu_sample &imu_data) {
+void KinZ::get_sensor_data(Imu_sample &imu_data) {
     imu_data = m_imu_data;
 }
 
-void KinZ::getNumBodies(uint32_t &numBodies) {
+void KinZ::get_num_bodies(uint32_t &numBodies) {
     numBodies = m_num_bodies;
 }
 
@@ -701,8 +701,8 @@ void KinZ::getNumBodies(uint32_t &numBodies) {
 // Copy getBodyIndexMap frame to Matlab matrix
 // You must call updateData first
 //////////////////////////////////////////////////////////////////////////
-void KinZ::getBodyIndexMap(bool returnId, uint8_t bodyIndex[],
-                           uint64_t& time, bool& validData)
+void KinZ::get_body_index_map(bool returnId, uint8_t bodyIndex[],
+                           uint64_t& time, bool& valid_data)
 {
     if(m_body_index) {
         int w = k4a_image_get_width_pixels(m_body_index);
@@ -711,25 +711,25 @@ void KinZ::getBodyIndexMap(bool returnId, uint8_t bodyIndex[],
         uint8_t* dataBuffer = k4a_image_get_buffer(m_body_index);
 
         if (returnId)
-            changeBodyIndexToBodyId(dataBuffer, w, h);
+            change_body_index_to_body_id(dataBuffer, w, h);
 
         // Copy body index frame to output matrix
-        int colSize = w;
+        int col_size = w;
         for (int x=0, k=0; x<w; x++)
             for (int y=0; y<h; y++,k++) {
-                int idx = y * colSize + x;
+                int idx = y * col_size + x;
 
                 bodyIndex[k] = dataBuffer[idx];
             }
 
-        validData = true;
+        valid_data = true;
         time = k4a_image_get_system_timestamp_nsec(m_body_index);
     }
     else 
-        validData = false;
+        valid_data = false;
 } // end getDepth
 
-void KinZ::changeBodyIndexToBodyId(uint8_t* image_data, int width, int height) {
+void KinZ::change_body_index_to_body_id(uint8_t* image_data, int width, int height) {
     for(int i=0; i < width*height; i++) {
         uint8_t index = *image_data;
 
@@ -739,7 +739,7 @@ void KinZ::changeBodyIndexToBodyId(uint8_t* image_data, int width, int height) {
     }
 }
 
- void KinZ::getBodies(k4abt_frame_t &body_frame, k4a_calibration_t &calibration) {
+ void KinZ::get_bodies(k4abt_frame_t &body_frame, k4a_calibration_t &calibration) {
      body_frame = m_body_frame;
      calibration = m_calibration;
  }

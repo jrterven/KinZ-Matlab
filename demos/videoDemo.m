@@ -1,10 +1,10 @@
 % VIDEODEMO Illustrates how to use the KinZ class which is an interface for
-%   Kinect for Azure SDK functionality
+%   Azure Kinect functionality
 %
 % Juan R. Terven, jrterven@hotmail.com
 % Diana M. Cordova, diana_mce@hotmail.com
 % 
-addpath('Mex');
+addpath('../Mex');
 clear all
 close all
 
@@ -17,19 +17,19 @@ close all
 kz = KinZ('720p', 'binned', 'nfov', 'imu_on');
 
 % images sizes
-depth_width = kz.DepthWidth; 
-depth_height = kz.DepthHeight; 
+depthWidth = kz.DepthWidth; 
+depthHeight = kz.DepthHeight; 
 outOfRange = 2000;
-color_width = kz.ColorWidth; 
-color_height = kz.ColorHeight;
+colorWidth = kz.ColorWidth; 
+colorHeight = kz.ColorHeight;
 
 % Color image is to big, let's scale it down
 colorScale = 1;
 
 % Create matrices for the images
-depth = zeros(depth_height,depth_width,'uint16');
-infrared = zeros(depth_height,depth_width,'uint16');
-color = zeros(color_height*colorScale,color_width*colorScale,3,'uint8');
+depth = zeros(depthHeight,depthWidth,'uint16');
+infrared = zeros(depthHeight,depthWidth,'uint16');
+color = zeros(colorHeight*colorScale,colorWidth*colorScale,3,'uint8');
 
 % depth stream figure
 f1 = figure;
@@ -59,16 +59,16 @@ disp('Press q on color figure to exit')
 while true
     % Get frames from Kinect and save them on underlying buffer
     % 'color','depth','infrared'
-    validData = kz.updateData('color','depth','infrared', 'imu');
+    validData = kz.getframes('color','depth','infrared', 'imu');
     
     % Before processing the data, we need to make sure that a valid
     % frame was acquired.
     if validData
         % Copy data to Matlab matrices        
-        [depth, depth_timestamp] = kz.getDepth;
-        [color, color_timestamp] = kz.getColor;
-        [infrared, infrared_timestamp] = kz.getInfrared;
-        sensor_data = kz.getSensorData;
+        [depth, depth_timestamp] = kz.getdepth;
+        [color, color_timestamp] = kz.getcolor;
+        [infrared, infrared_timestamp] = kz.getinfrared;
+        sensorData = kz.getsensordata;
         
         % update depth figure
         set(h1,'CData',depth); 
@@ -82,15 +82,15 @@ while true
         set(h3,'CData',infrared); 
         
         disp('------------ Sensors Data ------------')
-        disp(['Temp: ' num2str(sensor_data.temp)]);
-        disp(['acc_x: ' num2str(sensor_data.acc_x)]);
-        disp(['acc_y: ' num2str(sensor_data.acc_y)]);
-        disp(['acc_z: ' num2str(sensor_data.acc_z)]);
-        disp(['acc_timestamp: ' num2str(sensor_data.acc_timestamp_usec)]);
-        disp(['gyro_x: ' num2str(sensor_data.gyro_x)]);
-        disp(['gyro_y: ' num2str(sensor_data.gyro_y)]);
-        disp(['gyro_z: ' num2str(sensor_data.gyro_z)]);
-        disp(['gyro_timestamp: ' num2str(sensor_data.gyro_timestamp_usec)]);
+        disp(['Temp: ' num2str(sensorData.temp)]);
+        disp(['acc_x: ' num2str(sensorData.acc_x)]);
+        disp(['acc_y: ' num2str(sensorData.acc_y)]);
+        disp(['acc_z: ' num2str(sensorData.acc_z)]);
+        disp(['acc_timestamp: ' num2str(sensorData.acc_timestamp_usec)]);
+        disp(['gyro_x: ' num2str(sensorData.gyro_x)]);
+        disp(['gyro_y: ' num2str(sensorData.gyro_y)]);
+        disp(['gyro_z: ' num2str(sensorData.gyro_z)]);
+        disp(['gyro_timestamp: ' num2str(sensorData.gyro_timestamp_usec)]);
     end
     
     % If user presses 'q', exit loop
