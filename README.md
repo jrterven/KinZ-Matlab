@@ -18,4 +18,6 @@ Currently, there are only 5 demos:
 - **pointcloudDemos**: shows how to get the colored pointcloud and visualize it.
 - **bodyTrackingDemo**: shows how to get body tracking information and visualize it.
 
+[![View KinZ-Matlab on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/81788-kinz-matlab)
+
 ![RGB, Depth, and Infrared](/demos/videodemo.png "Video Demo")
