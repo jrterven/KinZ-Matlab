@@ -4,7 +4,7 @@ This library allows using Azure Kinect directly in Matlab.
 
 
 ## Installation:
-First install the Azure Kinect SDK as described [here](https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md).
+First, install the Azure Kinect SDK as described [here](https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md).
 
 Then set the compiler for Matlab as shown [here](https://www.mathworks.com/help/matlab/matlab_external/choose-c-or-c-compilers.html)
 
@@ -18,3 +18,4 @@ Currently, there are only 5 demos:
 - **pointcloudDemos**: shows how to get the colored pointcloud and visualize it.
 - **bodyTrackingDemo**: shows how to get body tracking information and visualize it.
 
+![RGB, Depth, and Infrared](/demos/videodemo.png "Video Demo")
