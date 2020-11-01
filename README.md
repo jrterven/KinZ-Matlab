@@ -11,7 +11,7 @@ This library allows using Azure Kinect directly in Matlab.
 5. Once the Kinect is correctly installed, close the viewer, and open Matlab. 
 6. In Matlab, set the compiler for C++ as shown [here](https://www.mathworks.com/help/matlab/matlab_external/choose-c-or-c-compilers.html).
 5. Open the *compile_for_windows.m* or *compile_for_linux.m*, set the corresponding paths and run. If the compilation was successful,
-6. Add to the windows path environmental variable the bin directory containing the **k4a.dll** and optionally **k4abt.dll** (if compiling the body tracking SDK). For example add *C:\Program Files\Azure Kinect SDK v1.4.1\tools* to the path environmental variable. Follow the instructions described [here](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/).
+6. For the case of Windows, add to the windows path environmental variable the bin directory containing the **k4a.dll** and optionally **k4abt.dll** (if compiling the body tracking SDK). For example add *C:\Program Files\Azure Kinect SDK v1.4.1\tools* to the path environmental variable. Follow the instructions described [here](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/).
 
 
 ## Demos
