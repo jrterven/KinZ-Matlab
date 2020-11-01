@@ -4,10 +4,10 @@ This library allows using Azure Kinect directly in Matlab.
 
 
 ## Installation:
-1. Install the Azure Kinect SDK as described [here](https://docs.microsoft.com/en-us/azure/kinect-dk/sensor-sdk-download)  where it says Microsoft installer. Download the .exe and follow the steps.
+1. Install the Azure Kinect SDK as described [here](https://docs.microsoft.com/en-us/azure/kinect-dk/sensor-sdk-download)  where it says Microsoft installer. For Windows, Download the .exe and follow the steps. For Ubuntu use the *sudo apt install* commands shown in the same page.
 2. For Body tracking functionality (optional) you need an NVIDIA GPU and install CUDA. Download from [here](https://developer.nvidia.com/cuda-downloads?/).
-3. For Body tracking, install the Azure Kinect Body Tracking SDK. Download the msi installer from [here](https://docs.microsoft.com/en-us/azure/kinect-dk/body-sdk-download).
-4. Before compiling the code for Matlab, make sure the Kinect works correctly using the viewers provided my Microsoft, e.g. *C:\Program Files\Azure Kinect SDK v1.4.1\tools\k4aviewer.exe* and *C:\Program Files\Azure Kinect Body Tracking SDK\tools\k4abt_simple_3d_viewer.exe*.
+3. For Body tracking, install the Azure Kinect Body Tracking SDK. Fow Windows, download the msi installer from [here](https://docs.microsoft.com/en-us/azure/kinect-dk/body-sdk-download). For Ubuntu simply run the *sudo apt install* command provided in the webpage.
+4. Before compiling the code for Matlab, make sure the Kinect works correctly using the viewers provided my Microsoft, e.g. *C:\Program Files\Azure Kinect SDK v1.4.1\tools\k4aviewer.exe* and *C:\Program Files\Azure Kinect Body Tracking SDK\tools\k4abt_simple_3d_viewer.exe*. In Linux just type *k4aviewer* or *k4abt_simple_3d_viewer* in the terminal.
 5. Once the Kinect is correctly installed, close the viewer, and open Matlab. 
 6. In Matlab, set the compiler for C++ as shown [here](https://www.mathworks.com/help/matlab/matlab_external/choose-c-or-c-compilers.html).
 5. Open the *compile_for_windows.m* or *compile_for_linux.m*, set the corresponding paths and run. If the compilation was successful,
