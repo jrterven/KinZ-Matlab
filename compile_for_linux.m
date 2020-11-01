@@ -1,5 +1,5 @@
-function compile_cpp_files
-% compile_cpp_files compiles the Kin2 toolbox.
+function compile_for_linux
+% compile_for_linux compiles the KinZ toolbox.
 % The C++ code is located in 3 files:
 %   KinZ.h:  KinZ class definition.
 %   KinZ_base.cpp: KinZ class implementation of the base functionality including body data.
@@ -15,23 +15,19 @@ function compile_cpp_files
 %   Diana M. Cordova, diana_mce@hotmail.com
 
 USE_BODY = false;
-Azure_kinect_lib = 'libk4a.so.1.3';
-Azure_body_sdk = 'libk4abt.so.1.0';
+
+% Specify the libraries versions
+Azure_kinect_lib = 'libk4a.so.1.4';
+Azure_body_sdk = 'libk4abt.so.1.1';
 
 IncludePath = '/usr/bin/';
 LibPath = '/usr/bin/';
 
-if USE_BODY
-    disp('Compiling using Azure Body Tracking SDK ...');
-else
-    disp('Compiling without Azure Body Tracking SDK ...');
-end
-
 cd Mex
-if isunix && ~USE_BODY
+if ~USE_BODY
     mex ('-compatibleArrayDims', '-v', 'KinZ_mex.cpp', 'KinZ_base.cpp', ...
-        ['-L' LibPath],['-l:' Azure_kinect_lib], ['-l:' Azure_body_sdk] ,['-I' IncludePath]);
-elseif isunix && USE_BODY
+        ['-L' LibPath],['-l:' Azure_kinect_lib], ['-I' IncludePath]);
+else
     mex ('-compatibleArrayDims', '-v', 'CXXFLAGS=$CXXFLAGS -DBODY', 'KinZ_mex.cpp', 'KinZ_base.cpp', ...
         ['-L' LibPath],['-l:' Azure_kinect_lib], ['-l:' Azure_body_sdk] ,['-I' IncludePath]);
 end

@@ -1,4 +1,5 @@
 % BODYTRACKINGDEMO Illustrates how to use the KinZ class for body tracking.
+% NOTE: this demo only works if KinZ was compiled with USE_BODY = true
 %
 % Juan R. Terven, jrterven@hotmail.com
 % Diana M. Cordova, diana_mce@hotmail.com
