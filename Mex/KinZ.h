@@ -24,8 +24,11 @@
 
 ///////////////////////////////////////////////////////////////////////////
 #include <k4a/k4a.h>
-#include <k4abt.h>
 #include <vector>
+
+#ifdef BODY
+#include <k4abt.h>
+#endif
 
 #define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p); (p)=NULL; } }
 
@@ -89,9 +92,12 @@ public:
     void get_calibration(k4a_calibration_t &calibration);
     void get_pointcloud(double pointcloud[], unsigned char colors[], bool color, bool& valid_data);   
     void get_sensor_data(Imu_sample &imu_data);
+
+    #ifdef BODY
     void get_num_bodies(uint32_t &num_bodies);
     void get_bodies(k4abt_frame_t &body_frame, k4a_calibration_t &calibration);
     void get_body_index_map(bool return_id, uint8_t body_index[], uint64_t& time, bool& valid_data);
+    #endif
     
 private:    
     // Current Kinect
@@ -120,11 +126,13 @@ private:
     k4a_transformation_t m_transformation = NULL;
 
     // Body tracking
+    #ifdef BODY
     k4abt_tracker_t m_tracker = NULL;
     k4abt_frame_t m_body_frame = NULL;
     bool m_body_tracking_available;
     uint32_t m_num_bodies;
     k4a_image_t m_body_index = nullptr;
+    #endif
     
 	int initialize(int resolution, bool wide_fov, bool binned, uint8_t framerate, uint8_t device_index);
     bool align_depth_to_color(int width, int height, k4a_image_t &transformed_depth_image);

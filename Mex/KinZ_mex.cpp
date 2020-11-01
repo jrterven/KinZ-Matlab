@@ -379,6 +379,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         return;
     }
 
+    #ifdef BODY
     // getNumBodies method
     if (!strcmp("getnumbodies", cmd)) 
     {
@@ -535,6 +536,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         return;
     }
+    #endif
 
     // getPointCloud method
     if (!strcmp("getpointcloud", cmd)) 

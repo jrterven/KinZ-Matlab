@@ -39,11 +39,22 @@ KinZ::KinZ(uint16_t sources)
 // Destructor. Release all buffers
 KinZ::~KinZ()
 {    
+    #ifdef BODY
     if (m_tracker != NULL) {
         k4abt_tracker_shutdown(m_tracker);
         k4abt_tracker_destroy(m_tracker);
         m_tracker = NULL;
     }
+    if (m_body_index) {
+        k4a_image_release(m_body_index);
+        m_body_index = NULL;
+    }
+    if (m_body_frame != NULL) {
+        k4abt_frame_release(m_body_frame);
+        m_body_frame = NULL;
+    }
+    #endif
+
     if (m_device != NULL) {
         k4a_device_stop_cameras(m_device);
         k4a_device_close(m_device);
@@ -60,14 +71,6 @@ KinZ::~KinZ()
     if (m_image_ir) {
         k4a_image_release(m_image_ir);
         m_image_ir = NULL;
-    }
-    if (m_body_index) {
-        k4a_image_release(m_body_index);
-        m_body_index = NULL;
-    }
-    if (m_body_frame != NULL) {
-        k4abt_frame_release(m_body_frame);
-        m_body_frame = NULL;
     }
     if (m_capture != NULL) {
         k4a_capture_release(m_capture);
@@ -196,9 +199,7 @@ void KinZ::init()
     }
 
     // Start body tracker
-    //m_body_frame = NULL;
-    //m_tracker = NULL;
-    
+    #ifdef BODY    
     m_body_tracking_available = false;
     m_num_bodies = 0;
     if (m_flags & kz::BODY_TRACKING || m_flags & kz::BODY_INDEX) {
@@ -212,6 +213,7 @@ void KinZ::init()
             m_body_tracking_available = false;
         }
     }
+    #endif
     
 
 } // end init
@@ -238,6 +240,8 @@ void KinZ::get_frames(uint16_t capture_flags, uint8_t valid[])
         k4a_image_release(m_image_ir);
         m_image_ir = NULL;
     }
+
+    #ifdef BODY 
     if (m_body_index) {
         k4a_image_release(m_body_index);
         m_body_index = NULL;
@@ -246,6 +250,7 @@ void KinZ::get_frames(uint16_t capture_flags, uint8_t valid[])
         k4abt_frame_release(m_body_frame);
         m_body_frame = NULL;
     }
+    #endif
     
     // Get a m_capture
     bool new_capture;
@@ -338,6 +343,7 @@ void KinZ::get_frames(uint16_t capture_flags, uint8_t valid[])
         }
     }
 
+    #ifdef BODY 
     if ((capture_flags & kz::BODY_TRACKING) && m_body_tracking_available) {
         // Get body tracking data
         k4a_wait_result_t queue_capture_result = k4abt_tracker_enqueue_capture(m_tracker, m_capture, K4A_WAIT_INFINITE);
@@ -374,6 +380,7 @@ void KinZ::get_frames(uint16_t capture_flags, uint8_t valid[])
             }
         }
     } // body tracking
+    #endif
 
     
     if (new_depth_data && new_color_data && new_infrared_data)
@@ -693,6 +700,7 @@ void KinZ::get_sensor_data(Imu_sample &imu_data) {
     imu_data = m_imu_data;
 }
 
+#ifdef BODY 
 void KinZ::get_num_bodies(uint32_t &numBodies) {
     numBodies = m_num_bodies;
 }
@@ -743,3 +751,4 @@ void KinZ::change_body_index_to_body_id(uint8_t* image_data, int width, int heig
      body_frame = m_body_frame;
      calibration = m_calibration;
  }
+ #endif
