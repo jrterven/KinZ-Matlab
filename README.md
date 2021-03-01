@@ -25,3 +25,14 @@ Currently, there are only 5 demos:
 [![View KinZ-Matlab on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/81788-kinz-matlab)
 
 ![RGB, Depth, and Infrared](/demos/videodemo.png "Video Demo")
+
+## Coming soon ...
+### Hand pose estimation
+Color image keypoints 
+![alt text](https://github.com/jrterven/KinZ-Python/blob/master/resources/0002-color_vis.jpg "RGB Image keypoints")
+
+Depth image keypoints
+![alt text](https://github.com/jrterven/KinZ-Python/blob/master/resources/0002-depth_vis.png "Depth Image keypoints")
+
+
+For more details checkout the [wiki pages](https://github.com/jrterven/KinZ-Matlab/wiki). 
